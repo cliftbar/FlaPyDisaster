@@ -1,0 +1,7 @@
+[ApplicationConfig]
+local_access_only: True
+
+
+[DefaultStyles]
+0!default = [['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000'], [0, 20, 40, 60, 80]]
+1!hurricane_kts = [['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa500', '#ff0000', '#ff00ff'], [0, 34, 65, 84, 96, 114, 135]]

@@ -1,0 +1,58 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+    <h2>Asteroid</h2>
+    <form name="input_params_form" method="post" action="{{ url_for('asteroid_input_params_form') }}">
+        <div>
+            <p>Diameter</p>
+            <input type="text" name="diameter" required value="30"/>
+            <select name="diameter_unit">
+                {% for o in distance_units %}
+                    <option value="{{ o[1] }}">{{ o[0] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <p>Angle</p>
+            <input type="text" name="angle" required value="90"/>
+            <select name="angle_unit">
+                <option value="deg">Degrees</option>
+                <option value="rad">Radians</option>
+            </select>
+        </div>
+        <div>
+            <p>Velocity</p>
+            <input type="text" name="velocity" required value="17"/>
+            <select name="velocity_unit">
+                {% for unit in velocity_units %}
+                    <option value="{{ unit[1] }}">{{ unit[0] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <p>Density (kg/m3)</p>
+            <input type="text" name="density_kgm3" required value="1000"/>
+        </div>
+        <div>
+            <p>Target Density (kg/m3)</p>
+            <input type="text" name="target_density_kgm3" required value="3600"/>
+        </div>
+        <div>
+            <p>Distance from event</p>
+            <input type="text" name="radius_obs" required value="10"/>
+            <select name="radius_obs_unit">
+                <option value="km">Kilometer</option>
+                <option value="m">Meters</option>
+                <option value="ft">Feet</option>
+            </select>
+        </div>
+        <br />
+        <button type="submit">Submit Input Parameters</button>
+    </form>
+    <br />
+    <form name="function_form" method="post" action="{{ url_for('asteroid_function_form') }}">
+        <div>
+            <button class="test" type="submit">Test Function!</button>
+        </div>
+    </form>
+    <link rel="stylesheet" href="../static/css/asteroid.css">
+{% endblock  %}

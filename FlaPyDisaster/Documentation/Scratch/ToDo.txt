@@ -1,0 +1,39 @@
+Things to do:
+	- Leaflet/Mapping/Javascript
+		-) Add leaflet draw
+		-) Add more user control to web page
+			-] hide layers
+			-] layer access in general
+			+] change breaks/colors from the mapping page
+		-) better 'create event' tools needed, probably need draw for it first
+			-] use draw to define bounding box
+			-] move and save event (when appropriate)
+		-) D3 visualizations for charts and graphs
+		-) Keep cleaning up mapping UI
+	- Python
+		-) make event inheritance work a bit better
+		-) break up FlaPyApp class into event specific modules
+		-) "Global" flask variable setup with contexts
+		-) better render performance
+		-) move config to class instead of scattered globals
+		-) Expand test cases
+	- Application
+		-) Put routes into a separate package (may need to create package and copy file contents instead of move contents)
+		-) Continue UI work
+		-) Reverse sort catalog by year/add sort options
+		-) Nav bar hover sections
+		-) Make toggle tests work everywhere
+		-) Better layouts with bootstrap
+		-) Make separate user spaces with sessions for now
+	- Science
+		-) validate asteroid calculations with something?
+		-) implement math for a hurricane model
+			-] make sure units are consistent (m/s, mph, km/h, nauts, miles, km, nautical miles ... so many)
+			-] 1-min 10m to 10-min 10m
+			-] Validate
+			-] Do another pass on the documentation
+			-] Add some statistics charts/graphs
+		-) Import format for Unysis
+		-) Add event to catalog
+		-) Save catalogs
+		-) Create events from scratch

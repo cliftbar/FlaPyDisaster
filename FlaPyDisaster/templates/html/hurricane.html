@@ -1,0 +1,66 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-6" style="border: 2px solid">
+                            <form name="file_form" method="POST" action="{{ url_for('hurricane_file_form') }}" enctype = "multipart/form-data">
+                                <div>
+                                    <h2>File Load</h2>
+                                </div>
+                                <div>
+                                    <input id="FileLoad" type="file" name="hurdat_file" required/>
+                                </div>
+                                <div>
+                                    <button type="submit">Load File</button>
+                                </div>
+                            </form>
+                            <form name="function_form" method="post"  action="{{ url_for('hurricane_function_form') }}">
+                                <div>
+                                    <button type="submit">Load Default Hurdat File</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-6" style="border: 2px solid">
+                            <h2>Single Event Load</h2>
+                            <p>Select an ini file to load.  For now this creates a hurricane catalog of a single storm.</p>
+                            <form name="file_form" method="POST" action="{{ url_for('hurricane_load_single_event') }}" enctype = "multipart/form-data">
+                                <div>
+                                    <input id="event_ini_file" type="file" name="event_ini_file" required/>
+                                </div>
+                                <div>
+                                    <button type="submit">Load Event ini</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="col-md-6" style="border: 2px solid">
+                            <button type="button" onclick="location.href='{{ url_for('leaflet_draw_event', sender_include='hurricane_draw_leaflet_include') }}'">Draw Event</button>
+                        </div>
+                        <div class="col-md-6" style="border: 2px solid">
+                            <h2>Single Event Load</h2>
+                            <p>Paste a Unisys track.dat file here.</p>
+                            <a href="http://weather.unisys.com/hurricane/index.php">Unisys</a>
+                            <a href="http://weather.unisys.com/hurricane/atlantic/2016/MATTHEW/track.dat">Matthew 2016</a>
+                            <form name="unisys_file_form" method="POST" action="{{ url_for('hurricane_load_unisys_event') }}" enctype = "multipart/form-data">
+                                <div>
+                                    <input id="unisys_event_file" type="url" name="unisys_event_file" required/>
+                                </div>
+                                <div>
+                                    <button type="submit">Load Event ini</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <br/>
+                    <div class="row">
+                        <div class="test" style="border: 2px solid">
+                            <p>Check that images are loading</p>
+                            <img src="{{ url_for('static', filename='images/test_image.png') }}">
+                            <br />
+                            <a href="{{ url_for('table_test') }}">Table Test</a>
+                        </div>
+                    </div>
+                </div>
+{% endblock  %}

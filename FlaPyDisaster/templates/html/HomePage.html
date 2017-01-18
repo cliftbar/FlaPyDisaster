@@ -1,0 +1,19 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+    <div>
+        <ul>
+            <li><a href="{{ url_for('hurricane_page') }}">Hurricane</a></li>
+            <li><a href="{{ url_for('asteroid_page') }}">Asteroid</a></li>
+        </ul>
+    </div>
+    <div>
+        <input class="test" type="button" onclick="HelloWorld('my_input')" value="Javascript Hello!" />
+    </div>
+    <br />
+    <div>
+        <h2 class="test">Test Links</h2>
+        <a class="test" href="{{ url_for('asteroid_result_test') }}">asteroid result test</a>
+        <br />
+        <a class="test" href="{{ url_for('leaflet_redirect') }}">leaflet test</a>
+    </div>
+{% endblock  %}

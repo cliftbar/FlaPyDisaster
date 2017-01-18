@@ -1,0 +1,28 @@
+{% extends "html/base.html" %}
+{% block content %}
+    <link rel="stylesheet" href="/static/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/leaflet_map.css" />
+    <script type=text/javascript src="/static/leaflet/leaflet.js"></script>
+    <script type=text/javascript src="/static/leaflet/L.CanvasLayer.js"></script>
+    <script type=text/javascript src="{{ url_for('leaflet_test_js') }}"></script>
+    <script type=text/javascript>
+            var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+        </script>
+
+    <div class="container-fluid leaflet_body">
+        <div class="row">
+            <div id="mapid" class="col-md-6 leaflet_map"></div>
+            <div class="col-md-6 event_controls">
+                {% if sender_include != 'none' %}
+                    {% include 'html/' + sender_include + '.html' %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        leaflet_init();
+        $("#color_modal").modal("show")
+        $("#color_modal").modal("hide")
+    </script>
+{% endblock  %}

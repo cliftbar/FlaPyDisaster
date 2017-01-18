@@ -1,0 +1,4 @@
+Explosion
+The Effects of Nuclear Weapons: https://www.fourmilab.ch/etexts/www/effects/
+TNT Equivalent: https://en.wikipedia.org/wiki/TNT_equivalent
+Bomb Shockwave Estimation: http://www.makeitlouder.com/document_bombshockwaveestimation.html

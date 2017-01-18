@@ -1,0 +1,104 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+<link rel="stylesheet" href="../static/leaflet/leaflet.css" />
+<link rel="stylesheet" href="../static/css/leaflet_map.css" />
+<script type=text/javascript src="../static/leaflet/leaflet.js"></script>
+<script type=text/javascript src="../static/leaflet/L.CanvasLayer.js"></script>
+<script type=text/javascript src="{{ url_for('leaflet_test_js') }}"></script>
+<script type=text/javascript>
+        var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+
+    <div class="leaflet_body">
+        <div class = "controls" id="controls">
+            <h1>Leaflet Test</h1>
+            <br>
+            <!--Test Inputs-->
+            <div class="test">
+                <button type="button" onclick="place_last_marker_test()" disabled>Add maker at last point</button>
+                <input type="checkbox" name="add_marker_CBX" id="add_marker_CBX" onclick="alert_state()" disabled/>
+                <label style="display:inline" for="add_marker_CBX" disabled>Add Marker</label>
+                <button type="button" onclick="clear_map()">Clear map</button>
+                <button type="button" onclick="geojson_test()">GeoJson Test</button>
+                <button type="button" onclick="geojson_points_test()">GeoJson Points Test</button>
+            </div>
+            {% if sender_include != 'none' %}
+                {% include 'html/' + sender_include + '.html' %}
+            {% endif %}
+            <!--<button type="button" onclick="hurdat_event_d3()">Hurdat Event Test Style D3</button>-->
+
+            <!-- Trigger the modal with a button -->
+            <button type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#color_modal">Open Color Settings</button>
+            <!-- Modal -->
+            <!--data-backdrop="static"-->
+            <div id="color_modal" class="modal fade" role="dialog" data-keyboard="false">
+                <div class="modal-dialog">
+
+                    <!-- Modal content-->
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            <h4 class="modal-title">Color Settings</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Color settings for map drawings</p>
+                            <form name="bin_colors" id="bin_colors" action="set_colors()">
+                                <select id="color_scheme_selector" name="color_scheme_selector" onchange="change_named_color_scheme()">
+                                    <!--<option value="<select a table>">&lt;Select A Table&gt;</option>-->
+                                    {% for name in named_color_schemes %}
+                                    <option value="{{ name }}">{{ name.split('!', maxsplit=1)[1] }}</option>
+                                    {% endfor %}
+                                </select>
+                                <select id="color_bin_source" name="color_bin_source">
+                                    <option value="scheme">From Scheme</option>
+                                    <option value="even">Even Breaks</option>
+                                </select>
+                                <label for="color_bin_source">Color Bin Type</label>
+                                <div>
+                                    <input id="number_colors" name="number_colors" type="hidden" value="5" >
+                                    <button type="button" onclick="add_color()">Add Color</button>
+                                    <button type="button" onclick="remove_color()">Remove Color</button>
+                                </div>
+                                <div>
+                                    <button type="button" onclick="set_colors()" class="btn btn-default" data-dismiss="modal" disabled>Set Color Scheme (dep)</button>
+                                </div>
+                                <br/>
+                                <div>
+                                    <input type="text" name="color_scheme_name" id="color_scheme_name" value="user_default_{{ user_color_num }}" disabled>
+                                    <input type="checkbox" name="save_color_scheme" id="save_color_scheme" value="1">
+                                    <label style="display:inline" for="save_color_scheme">Save Color Scheme</label>
+                                </div>
+                                <div>
+                                    <input type="number" id="opacity_value" name="opacity_value" max="100" min="0" step="1" onchange="set_opacity()" value=20>
+                                    <label style="display:inline" for="opacity_value">Opacity (%)</label>
+                                </div>
+                                <div id="color_selectors">
+                                    {% for color in default_colors[0] %}
+                                    <div id="div_color_{{ loop.index0 }}">
+                                        <input type="color" name="color_{{ loop.index0 }}" id="color_{{ loop.index0 }}" value="{{ default_colors[0][loop.index0] }}">
+                                        <input type="number" name="color_val_{{ loop.index0 }}" id="color_val_{{ loop.index0 }}" value="{{ default_colors[1][loop.index0] }}">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        <div id="mapid" class="leaflet_map"></div>
+    </div>
+
+    <script>
+        leaflet_init();
+        $("#color_modal").modal("show")
+        $("#color_modal").modal("hide")
+        $('#save_color_scheme').change(function() {
+            $('#color_scheme_name').attr('disabled',!this.checked);
+        });
+    </script>
+{% endblock  %}

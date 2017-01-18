@@ -1,0 +1,33 @@
+<!--Hurricane Draw Buttons-->
+<label for="event_name">Event Name:</label>
+<input id="event_name" type="text">
+<label for="event_gwaf">Event GWAF:</label>
+<input id="event_gwaf" type="number">
+<label for="event_rmax">Event Rmax (nmi):</label>
+<input id="event_rmax" type="number">
+<label for="event_fspeed">Event Fspeed (kts):</label>
+<input id="event_fspeed" type="number">
+<p>Points table</p>
+<table border="1" class="draw_event_table">
+    <thead>
+    <tr style="text-align: right;">
+        <th>catalog_number</th>
+        <th>name</th>
+        <th>basin</th>
+        <th>timestamp</th>
+        <th>lat_y</th>
+        <th>lon_x</th>
+        <th>max_wind_kts</th>
+        <th>min_cp_mb</th>
+        <th>sequence</th>
+        <th>fspeed_kts</th>
+        <th>is_landfall_point</th>
+        <th>rmax_nmi</th>
+        <th>gwaf</th>
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
+<link rel="stylesheet" href="/static/leaflet/leaflet_draw-master/leaflet.draw.css" />
+<script id="leaflet_draw_script" src="/static/leaflet/leaflet_draw-master/leaflet.draw-src.js"></script>

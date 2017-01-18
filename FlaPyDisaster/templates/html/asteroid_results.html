@@ -1,0 +1,41 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+    <h2>Input</h2>
+    <p>Diameter: {{ t_diameter_m }}</p>
+    <p>Angle: {{ t_angle_deg }}</p>
+    <p>Velocity: {{ t_velocity_kms }}</p>
+    <p>Density:  {{ t_density_kgpm3 }}</p>
+    <h2>Results</h2>
+    <p>Breakup Altitude: {{ t_breakup_alt_m }}</p>
+    <p>Airburst Altitude: {{ t_airburst_alt_m }}</p>
+    <p>Event Kenetic Energy: {{ t_energy_MtTnt }}</p>
+    <p>Return period: {{ t_retperiod_yr }}</p>
+    <p>Residual Velocity: {{ t_airburst_velocity_mps }}</p>
+    <p>Airburst energy: {{ t_airburst_energy_MtTnt }}</p>
+    <p>Overpressure at {{ t_radius_obs }}: {{ t_overpressure_obs_bar }}</p>
+    <br />
+    <div>
+        <a href="{{ url_for('leaflet_redirect', sender_include='asteroid_leaflet_include') }}">To Map</a>
+    </div>
+    <div>
+        <a href="{{ url_for('asteroid_page') }}">Back to input</a>
+    </div>
+    <br />
+    <div>
+        <h4>JQuery Testing</h4>
+        <p id="sel_text">Text here</p>
+        <select id="sel_sel" name="sel_test" onchange="unit_conversion('sel_sel', 'sel_text')">
+            <option value="km">Kilometer</option>
+            <option value="m">Meters</option>
+            <option value="ft">Feet</option>
+        </select>
+    </div>
+    <script src="../static/scripts/unit_conversions.js"></script>
+    <script src="../static/scripts/inits.js"></script>
+    <script type=text/javascript>
+        var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+    <script>
+        asteroid_result_init();
+    </script>
+{% endblock  %}

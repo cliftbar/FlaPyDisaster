@@ -1,0 +1,128 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+    <h1>Table Test</h1>
+
+    <!-- Options and Selectors -->
+    <div>
+        <!-- Combo Box -->
+        <select id="table_selector" name="catalog_names" onchange="change_table('table_selector', 'track_table', 0)">
+            <option value="<select a table>">&lt;Select A Table&gt;</option>
+            {% for name in catalog_names %}
+            <option value="{{ name }}">{{ name }}</option>
+            {% endfor %}
+        </select>
+
+        <button id="calc_event_grid" type="button" onclick="change_table('table_selector', 'track_table', 1)">Calculate Event Grid</button>
+
+        <div id="event_has_calc_indicator" class="indicator status_bad"></div>
+
+        <button type="button" onclick="location.href='{{ url_for('leaflet_redirect', sender_include='hurricane_leaflet_include') }}'">To Map</button>
+
+        <!-- Trigger the modal with a button -->
+        <button id="open_event_settings_modal" type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#event_settings_modal">Event Generation Settings</button>
+        <!-- Modal -->
+        <div id="event_settings_modal" class="modal fade" role="dialog" data-keyboard="false" data-backdrop="static">
+            <div class="modal-dialog">
+                <!-- Event settings modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button id="x_event_settings_modal" type="button" class="close" data-dismiss="modal" data-target="event_settings_modal">&times;</button>
+                        <h4 id="event_settings_title" class="modal-title">Event Footprint Settings</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Event Save Suffix</p>
+                        <input type="text" name="event_save_suffix" id="event_save_suffix">
+                        <form id="event_settings" name="event_settings" method="post">
+                            <p>Pixels Per Degree</p>
+                            <input type="number" name="px_per_degree" value=10>
+                            <p>Maximum Calculation Distance</p>
+                            <input type="number" name="max_calc_dist" value=360>
+                            <p>Gradient Wind Reduction Factor</p>
+                            <input type="number" name="gwaf" value=0.9>
+                            <p>Radius of Maximum Winds (nautical miles)</p>
+                            <input type="number" name="rmax_nmi" value=15>
+                            <p>Forward Speed</p>
+                            <div>
+                                <input type="number" name="fspeed_kts_input" id="fspeed_kts_input" value="15">
+                                <input type="checkbox" name="automatic_fspeed" id="automatic_fspeed" value="1">
+                                <label style="display:inline" for="automatic_fspeed">Calculate from position</label> <!-- Change this to style in css file-->
+                            </div>
+                            <br>
+                            <button type="button" onclick="set_event_settings()" class="btn btn-default" data-dismiss="modal">Submit Event Parameters</button>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="close_event_settings_modal" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trigger the modal with a button -->
+        <button type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#calculation_settings_modal">Calculation Settings</button>
+        <!-- Modal -->
+        <div id="calculation_settings_modal" class="modal fade" role="dialog" data-keyboard="false" data-backdrop="static">
+            <div class="modal-dialog">
+                <!-- Event settings modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 id="calculation_settings_title" class="modal-title">Calculation Settings</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="calculation_settings" name="calculation_settings" method="post">
+                            <p>Raster Bands</p>
+                            <input type="number" name="raster_bands"value="1" max="4" min="1">
+                            <p>Raster Output Band (RGB)</p>
+                            <input type="number" name="raster_output_band" value="1" max="3" min="1">
+                            <p>Type of Parallelism</p>
+                            <select name="type_of_parallel">
+                                <option value="single">Single Process</option>
+                                <option value="multi">Multi Process</option>
+                                <option value="gpu">GPU Processing</option>
+                            </select>
+                            <p>Number of Procs (if multi)</p>
+                            <input type="number" id="level_of_parallel" name="level_of_parallel" value="4">
+                            <input type="checkbox" name="guess_parallel" id="guess_parallel" value="1" onclick="">
+                            <label style="display:inline" for="guess_parallel">Guess Parallelism</label>
+                            <br>
+                            <input type="checkbox" name="force_calc" id="force_calc" value="1" onclick="">
+                            <label style="display:inline" for="force_calc">Force Calculate Footprint</label> <!-- Change this to style in css file-->
+                            <br>
+                            <button type="button" onclick="set_calculation_settings()" class="btn btn-default" data-dismiss="modal">Submit Calculation Parameters</button>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <button id="save_to_raster" type="button" onclick="save_event_to_raster('table_selector')">Save To Raster</button>
+    </div>
+
+    <!-- Table -->
+    <div>
+        <h1>{{name}}</h1>
+        {{data | safe}}
+    </div>
+    <br>
+    <div>
+        <img id="event_pic">
+    </div>
+
+    <script type=text/javascript src="{{ url_for('hurricane_tables_js') }}"></script>
+    <script type=text/javascript>
+        var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
+    <script>
+        <!--To make the modals behave properly, for some reason without this elements are clickable when hidden-->
+        $("#calculation_settings_modal").modal("show")
+        $("#event_settings_modal").modal("show")
+
+        $("#calculation_settings_modal").modal("hide")
+        $("#event_settings_modal").modal("hide")
+    </script>
+{% endblock  %}
