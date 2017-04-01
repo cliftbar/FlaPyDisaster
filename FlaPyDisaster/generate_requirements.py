@@ -8,4 +8,6 @@ import sys
 platform = sys.platform
 os.system("conda list --export > conda_requirements_" + platform + ".txt")
 os.system("conda list --explicit > conda_requirements_explicit_" + platform + ".txt")
+
+# Not supporting pip right now because of GDAL
 #os.system("pip freeze > requirements_" + platform + ".txt")
