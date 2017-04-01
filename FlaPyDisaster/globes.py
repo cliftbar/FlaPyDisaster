@@ -3,7 +3,6 @@ import configparser as cpar
 import os
 import shutil
 
-
 # Global Variables
 flapy_app = None
 GlobalConfig = None

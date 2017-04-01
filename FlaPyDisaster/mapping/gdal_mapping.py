@@ -1,9 +1,5 @@
-try:
-    # conda install of gdal
-    import gdal
-except ImportError:
-    # pip pygdal install of gdal
-    from osgeo import gdal
+#import gdal
+from osgeo import gdal
 
 import numpy as np
 import os
