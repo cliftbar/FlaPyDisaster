@@ -1,7 +1,12 @@
-import gdal
+try:
+    # conda install of gdal
+    import gdal
+except ImportError:
+    # pip pygdal install of gdal
+    from osgeo import gdal
+
 import numpy as np
 import os
-
 
 def save_array_to_raster(val_array, file_uri, overwrite=False, bands=1, write_band=1):
     """
