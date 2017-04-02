@@ -4,7 +4,7 @@
 IntelliJ (Windows) can't launch the application through app.py because of a GDAL dll import error.  Cause is unknown. Launch application from command line using python app.py.
 
 ## Installation
-Anaconda is recommended for setting up the python environment for this program.  Install from the appropriate requirements file using `conda install --file conda_requirements_XXXX.txt`.  There should not be a difference between conda_requirements win32 and linux, but that could change in the future.  conda_requirements_explicit has different paths for each OS.
+Anaconda is recommended for setting up the python environment for this program.  Install from the appropriate requirements file using `conda install --file conda_requirements_XXXX.txt`.  Explicit has web URLs for the conda packages.
 
 Pip can also work, but its not supported right now because GDAL has dependency probelms with pip.  GDAL has to be installed on the host machine, and the gdal package will have to be replaced with pygdal.  Note that these restrictions on GDAL might not matter when not using a virtual evnironment.
 
