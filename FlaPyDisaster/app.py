@@ -38,7 +38,8 @@ if __name__ == '__main__':
     # Some config testing for lists
     style = ast.literal_eval(GlobalConfig.get('DefaultStyles', '0!default'))
     print(style)
-
+    import mapping.gdal_mapping as gdm
+    gdm.hello()
     local_only = GlobalConfig.getboolean('ApplicationConfig', 'local_access_only')
     if local_only:
         app.run(HOST, PORT)

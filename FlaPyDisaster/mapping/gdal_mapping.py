@@ -1,8 +1,11 @@
-#import gdal
+# import gdal
 from osgeo import gdal
 
 import numpy as np
 import os
+
+def hello():
+    print(gdal.VersionInfo('VERSION_NUM'))
 
 def save_array_to_raster(val_array, file_uri, overwrite=False, bands=1, write_band=1):
     """
