@@ -1,4 +1,5 @@
 # FlaPyDisaster
+Hurricane modelling and mapping program written in Python and Flask, with Leaflet for mapping, implementing the NOAA NWS 23 parametric hurricane model. 
 
 ## Installation
 
