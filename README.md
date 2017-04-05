@@ -3,15 +3,15 @@ Hurricane modelling and mapping program written in Python and Flask, with Leafle
 
 ## Installation
 
-### Known Issues
-IntelliJ (Windows) can't launch the application through app.py because of a GDAL dll import error.  Cause is unknown. Launch application from command line using `python app.py`.
-
 ### Environments
 Anaconda is recommended for setting up the python environment for this program.  Install from the appropriate requirements file using `conda install --file conda_requirements_XXXX.txt`.  Explicit has web URLs for the conda packages.
 
 Pip can also work, but its not supported right now because GDAL has dependency probelms with pip.  GDAL has to be installed on the host machine, and the gdal package will have to be replaced with pygdal.  Note that these restrictions on GDAL might not matter when not using a virtual evnironment.
 
 ## Development
+#### IMPORTANT: To run in IDEs in windows with anaconda, the anaconda environment directory (ex: ...\Anaconda2\envs\EnvironmentName) must be included in PATH
+It can either be included globably or as a setting in the IDE, doesn't really matter.  Alternatively, activate the anaconda environment and run app.py, that will handle setting the PATH.
+
 I've used both IntellJ Idea and Visual Studio 2015 Community Edition with success, there shouldn't be anything preventing other IDEs though.
 
 ## Documentation
