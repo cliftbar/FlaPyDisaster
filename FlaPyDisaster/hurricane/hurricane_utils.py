@@ -797,7 +797,7 @@ class HurdatCatalog:
                 distance = genu.haversine_degrees_to_meters(lat_y, lon_x, eye_lat_lon[0], eye_lat_lon[1]) / 1000 * 0.539957  # convert to nautical miles
                 if distance < max_dist:
                     angle_to_center = calc_bearing_north_zero(eye_lat_lon[0], eye_lat_lon[1], lat_y, lon_x)
-                    windspeed_temp = hm.calc_windspeed(track_point.min_pressure_mb, distance, eye_lat_lon[0], track_point.fspeed_kts, rmax_nmi, angle_to_center, track_point.heading_to_next_point, vmax_kts=track_point.max_wind_kts)
+                    windspeed_temp = hm.calc_windspeed(track_point.min_pressure_mb, distance, eye_lat_lon[0], track_point.fspeed_kts, rmax_nmi, angle_to_center, track_point.heading_to_next_point, None, track_point.max_wind_kts, None)
                     max_wind = max(max_wind, windspeed_temp)
             return [lat_y, lon_x, max_wind]
 
