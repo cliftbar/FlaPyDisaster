@@ -1,4 +1,6 @@
 ﻿import math
+import numba
+from numba import jit
 
 
 """
@@ -32,7 +34,7 @@ MpsToKts = 1.94384
 KpaToInhg = 0.2953
 MbToInhg = 0.02953
 
-
+@jit(nopython=True,cache=True)
 def linear_interpolation(x, x1, x2, y1, y2):
     """
 
@@ -45,7 +47,7 @@ def linear_interpolation(x, x1, x2, y1, y2):
     """
     return ((y2 - y1) / (x2 - x1)) * (x - x1)
 
-
+@jit(nopython=True,cache=True)
 def radial_decay(r_nmi, rmax_nmi):
     """
     Calculates the radial decay factor for a given radius.
@@ -71,7 +73,7 @@ def radial_decay(r_nmi, rmax_nmi):
     ret = max(min(ret, 1), 0)
     return ret
 
-
+@jit(nopython=True,cache=True)
 def coriolis_frequency(lat_deg):
     """
     Calculate the coriolis factor for a given latitude
@@ -81,7 +83,7 @@ def coriolis_frequency(lat_deg):
     w = 2.0 * math.pi / 24
     return 2.0 * w * math.sin(math.radians(lat_deg))
 
-
+@jit(nopython=True,cache=True)
 def k_density_coefficient(lat_deg):
     """
     NWS 23 pdf page 50, page 24, figure 2.10, emperical relationship (linear regression)
@@ -98,7 +100,7 @@ def k_density_coefficient(lat_deg):
     # return 70.1 + -0.185714286 * (lat_deg - 24.0)
     return 69.1952184 / (1 + math.exp(0.20252 * (lat_deg - 58.72458)))
 
-
+@jit(nopython=True,cache=True)
 def gradient_wind_at_radius(pw_inhg, cp_inhg, r_nmi, lat_deg):
     """
     NWS 23 pdf page 49, page 23, equation 2.2
@@ -113,7 +115,7 @@ def gradient_wind_at_radius(pw_inhg, cp_inhg, r_nmi, lat_deg):
     f = coriolis_frequency(lat_deg)
     return k * ((pw_inhg - cp_inhg) ** 0.5) - (r_nmi * f) / 2
 
-
+@jit(nopython=True,cache=True)
 def asymmetry_factor(fspeed_kts, r_nmi, rmax_nmi, angle_from_center, track_bearing):
     """
     NWS 23 pdf page 51, page 25, equation 2.5
@@ -141,7 +143,7 @@ def asymmetry_factor(fspeed_kts, r_nmi, rmax_nmi, angle_from_center, track_beari
     return asym
     # return beta
 
-
+@jit(nopython=True,cache=True)
 def inflow_angle(r_nmi, rmax_nmi):
     """
     Emperical inflow angle calculation of PMH
@@ -174,8 +176,8 @@ def inflow_angle(r_nmi, rmax_nmi):
             phi -= 2
     return phi
 
-
-def calc_windspeed(cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center, track_heading, pw_kpa=Pw_PMH_kPa, vmax_kts=None, gwaf=0.9):
+@jit(signature_or_function=(numba.optional(numba.double), numba.double, numba.double, numba.double, numba.int64, numba.double, numba.double, numba.optional(numba.double), numba.optional(numba.double), numba.optional(numba.double)),nopython=True,cache=True)
+def calc_windspeed(cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center, track_heading, pw_kpa, vmax_kts, gwaf=0.9):
     """
     Calculate the windspeed at a given point from parameters
     :param cp_mb: float mb central pressure
@@ -190,6 +192,13 @@ def calc_windspeed(cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center,
     :param gwaf: float  Gradient Wind Adjustment Factor, semi-emprical adjustment to the Gradient Wind. Range 0.75-1.05, Generally between 0.9 and 1. NWS 23 pdf page 50, page 24, 2.2.7.2.1
     :return: float kts Windspeed at a given radius for the storm
     """
+    
+    if gwaf is None:
+        gwaf = 0.9
+
+    if pw_kpa is None:
+        pw_kpa = Pw_PMH_kPa
+
     if cp_mb is None and vmax_kts is None:
         raise ValueError('No vmax and no cp')
 

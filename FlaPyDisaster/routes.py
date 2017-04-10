@@ -3,6 +3,7 @@
 from hurricane_routes import *
 from asteroid_routes import *
 from leaflet_routes import *
+from contamination_routes import *
 from documentation_routes import *
 from general import general_units
 import globes as gb
