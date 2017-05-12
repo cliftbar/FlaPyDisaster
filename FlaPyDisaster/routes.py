@@ -63,6 +63,11 @@ def asteroid_result_test():
                               , t_radius_obs="300 m"
                               , t_overpressure_obs_bar="100 bar")
 
+# asteroid result page route
+@app.route('/test')
+def test_page():
+    return fl.render_template('html/test.html')
+
 
 @app.route('/hard_reset')
 def hard_reset():
