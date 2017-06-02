@@ -6,6 +6,9 @@ import general.general_utils as genu
 import general.general_colors as genc
 import time
 import urllib.request as urlr
+import numpy as np
+import requests
+import json
 
 # global variables
 catalog = None
@@ -73,9 +76,35 @@ def change_table():
 
         if do_calc == 1:
             gb.flapy_app.calculate_event(name)
+        elif do_calc == 2:
+            formData = {}
+            formData = gb.flapy_app.hurricane_catalog.current_storm.to_model_dataframe().values.tolist()
+            formData = [[None if str(x) == "nan" else x for x in l] for l in formData]
+            formDict = {}
+            #for i in range(len(formData)):
+            #    formDict["tp_" + str(i)] = formData[i]
+            # formData = ["|".join(map(str, ls)) for ls in formData]
+            
+            
+            # formData = {"track": "test"}
+            formDict = {"track": formData}
+            gb.flapy_app.hurricane_catalog.current_storm.BuildLatLonGridFromTrack(10, 10)
+            formDict['BBox']['topLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.top_lat_y
+            formDict['BBox']['botLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.bot_lat_y
+            formDict['BBox']['leftLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.left_lon_x
+            formDict['BBox']['rightLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.right_lon_x
 
+            formDict['rmax'] = gb.flapy_app.hurricane_catalog.current_storm.rmax_nmi
+            formDict['fspeed'] = gb.flapy_app.hurricane_catalog.current_storm.fspeed_kts
+            # formJson = json.dumps(formData)
+            # headers = {'Content-type': 'application/json'}
+            # r = requests.post("http://localhost:9000/hurTest", data = formJson, headers=headers)
+            r = requests.post("http://localhost:9000/hurTest", json = formDict)
+            print(r.status_code)
         ret_data = gb.flapy_app.get_event_table('current')
         calcd = gb.flapy_app.has_event_calcd('current')
+
+        
     else:
         ret_data = gb.flapy_app.get_event_table('null')
         calcd = 0

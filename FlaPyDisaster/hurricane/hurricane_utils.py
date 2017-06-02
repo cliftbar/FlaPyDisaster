@@ -755,15 +755,7 @@ class HurdatCatalog:
             if rmax_nmi is None:
                 rmax_nmi = self.rmax_nmi
 
-            if bbox is None:
-                lat_list = list(map(lambda x: x.point_lat_lon()[0], self.track_points))
-                lon_list = list(map(lambda x: x.point_lat_lon()[1], self.track_points))
-                # diff_lat = max(int(max(lat_list) - min(lat_list)), 1)
-                # diff_lon = max(int(max(lon_list) - min(lon_list)), 1)
-                diff_lat = 2
-                diff_lon = 2
-                bbox = geno.BoundingBox(max(lat_list) + diff_lat, min(lat_list) - diff_lat, max(lon_list) + diff_lon, min(lon_list) - diff_lon)
-            self.lat_lon_grid = geno.LatLonGrid(bbox.top_lat_y, bbox.bot_lat_y, bbox.left_lon_x, bbox.right_lon_x, px_per_deg_x, px_per_deg_y)
+            self.BuildLatLonGridFromTrack(px_per_deg_x, px_per_deg_y, bbox)
 
             lat_lon_list = self.lat_lon_grid.get_lat_lon_list()
 
@@ -800,6 +792,20 @@ class HurdatCatalog:
                     windspeed_temp = hm.calc_windspeed(track_point.min_pressure_mb, distance, eye_lat_lon[0], track_point.fspeed_kts, rmax_nmi, angle_to_center, track_point.heading_to_next_point, None, track_point.max_wind_kts, None)
                     max_wind = max(max_wind, windspeed_temp)
             return [lat_y, lon_x, max_wind]
+
+        def bBoxFromTrack(self):
+            lat_list = list(map(lambda x: x.point_lat_lon()[0], self.track_points))
+            lon_list = list(map(lambda x: x.point_lat_lon()[1], self.track_points))
+            # diff_lat = max(int(max(lat_list) - min(lat_list)), 1)
+            # diff_lon = max(int(max(lon_list) - min(lon_list)), 1)
+            diff_lat = 2
+            diff_lon = 2
+            return geno.BoundingBox(max(lat_list) + diff_lat, min(lat_list) - diff_lat, max(lon_list) + diff_lon, min(lon_list) - diff_lon)
+
+        def BuildLatLonGrid(self, px_per_deg_x, px_per_deg_y, bbox = None):
+            if bbox is None:
+                bbox = bBoxFromTrack()
+            self.lat_lon_grid = geno.LatLonGrid(bbox.top_lat_y, bbox.bot_lat_y, bbox.left_lon_x, bbox.right_lon_x, px_per_deg_x, px_per_deg_y)
 
         def grid_to_geojson(self):
             """
