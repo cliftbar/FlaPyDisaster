@@ -755,7 +755,7 @@ class HurdatCatalog:
             if rmax_nmi is None:
                 rmax_nmi = self.rmax_nmi
 
-            self.BuildLatLonGridFromTrack(px_per_deg_x, px_per_deg_y, bbox)
+            self.BuildLatLonGrid(px_per_deg_x, px_per_deg_y, bbox)
 
             lat_lon_list = self.lat_lon_grid.get_lat_lon_list()
 
@@ -804,7 +804,7 @@ class HurdatCatalog:
 
         def BuildLatLonGrid(self, px_per_deg_x, px_per_deg_y, bbox = None):
             if bbox is None:
-                bbox = bBoxFromTrack()
+                bbox = self.bBoxFromTrack()
             self.lat_lon_grid = geno.LatLonGrid(bbox.top_lat_y, bbox.bot_lat_y, bbox.left_lon_x, bbox.right_lon_x, px_per_deg_x, px_per_deg_y)
 
         def grid_to_geojson(self):

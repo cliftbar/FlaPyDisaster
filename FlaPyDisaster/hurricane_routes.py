@@ -80,15 +80,12 @@ def change_table():
             formData = {}
             formData = gb.flapy_app.hurricane_catalog.current_storm.to_model_dataframe().values.tolist()
             formData = [[None if str(x) == "nan" else x for x in l] for l in formData]
+            formData = list(map((lambda x: {"catalogNumber": x[0], "stormName": x[1], "basin": x[2], "timestamp": x[3], "eyeLat_y": x[4], "eyeLon_x": x[5], "maxWind_kts": x[6], "minCp_mb": x[7], "sequence": x[8], "fSpeed_kts": x[9], "isLandfallPoint": bool(x[10]), "rMax_nmi": x[11], "gwaf": x[12], "heading": None}), formData))
             formDict = {}
-            #for i in range(len(formData)):
-            #    formDict["tp_" + str(i)] = formData[i]
-            # formData = ["|".join(map(str, ls)) for ls in formData]
-            
-            
-            # formData = {"track": "test"}
+
             formDict = {"track": formData}
-            gb.flapy_app.hurricane_catalog.current_storm.BuildLatLonGridFromTrack(10, 10)
+            gb.flapy_app.hurricane_catalog.current_storm.BuildLatLonGrid(10, 10)
+            formDict['BBox'] = {}
             formDict['BBox']['topLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.top_lat_y
             formDict['BBox']['botLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.bot_lat_y
             formDict['BBox']['leftLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.left_lon_x
@@ -96,9 +93,7 @@ def change_table():
 
             formDict['rmax'] = gb.flapy_app.hurricane_catalog.current_storm.rmax_nmi
             formDict['fspeed'] = gb.flapy_app.hurricane_catalog.current_storm.fspeed_kts
-            # formJson = json.dumps(formData)
-            # headers = {'Content-type': 'application/json'}
-            # r = requests.post("http://localhost:9000/hurTest", data = formJson, headers=headers)
+
             r = requests.post("http://localhost:9000/hurTest", json = formDict)
             print(r.status_code)
         ret_data = gb.flapy_app.get_event_table('current')
