@@ -1,6 +1,6 @@
 # FlaPyDisaster
 Hurricane modelling and mapping program written in Python and Flask, with Leaflet for mapping, implementing the NOAA NWS 23 parametric hurricane model. 
-
+[FlaPyScala](https://github.com/cliftbar/FlaPyScala) is a companion app for FlaPyDisaster.  FlaPyScala will implement the model calculations in Scala, using the play framework for an api, for better performance thaN the Python implementation.
 ## Installation
 
 ### Environments
