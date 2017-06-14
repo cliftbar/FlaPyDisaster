@@ -1,7 +1,7 @@
 # Hurricane Documentation
 
 ## Overview
-This program takes a hurricane track, calculates a wind footprint for the track, and maps the results.
+This program takes a hurricane track, calculates a wind footprint for the track, and maps the results.  Note: If viewing this through GitHub, images are located at [FlaPyDisaster/Documentation/Hurricane/NWS23](/FlaPyDisaster/Documentation/Hurricane/NWS23), but links in the document will not work.
 
 ## Hurricane Track
 A hurricane track is the measurements taken of a hurricane over time.  These are generally provided in flat text files.
