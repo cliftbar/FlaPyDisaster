@@ -51,7 +51,7 @@ cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center, track_heading, pw_
 
 * cp_mb
   * Unit: Millibars
-  * Not Required: Ignored if vmax_kts is provided
+  * Optional: Ignored if vmax_kts is provided
   * Minimum central pressure at the current point.  Used to calculate the maximum gradient wind speed (10-min 10m) at the point
    if it is not provided.
 * r_nmi
