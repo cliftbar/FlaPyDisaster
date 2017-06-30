@@ -189,7 +189,7 @@ def hurricane_save_event_to_raster():
         with open('test_out.txt', 'w') as fi:
             fi.write("x\ty\tz\n")
             for line in gb.flapy_app.hurricane_catalog.current_storm.grid_to_xyz_list():
-                fi.write(str(line[0]) + "\t" + str(line[1]) + "\t" + str(line[2]) + "\n")
+                fi.write(str(line[0]) + "\t" + str(line[1]) + "\t" + str(int(round(line[2]))) + "\n")
         if event_save_suffix != '':
             base_name += "_" + event_save_suffix
         static_uri = r"images/" + base_name + ".png"
