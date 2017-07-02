@@ -93,7 +93,7 @@ class HurdatCatalog:
                              "r50_ne_nmi", "r500_se_nmi", "r50_sw_nmi", "r50_nw_nmi", "r64_ne_nmi", "r64_se_nmi",
                              "r64_sw_nmi", "r64_nw_nmi"]
         model_headers = ["catalog_number", "name", "basin", "timestamp", "lat_y", "lon_x", "max_wind_kts", "min_cp_mb",
-                         "sequence", "fspeed_kts", "is_landfall_point", "rmax_nmi", "gwaf"]
+                         "sequence", "fspeed_kts", "is_landfall_point", "heading", "rmax_nmi", "gwaf"]
 
         unisys_headers = ["NAME", "ADV", "LAT", "LON", "TIME", "WIND", "PR", "STAT"]
 
@@ -261,7 +261,8 @@ class HurdatCatalog:
                         , self.min_pressure_mb
                         , self.sequence
                         , self.fspeed_kts
-                        , self.is_landfall]
+                        , self.is_landfall
+                        , self.heading_to_next_point]
 
         def __init__(self, hurdat_storm_data=None, fspeed_kts=15, rmax_nmi=15, gwaf=0.9):
             """

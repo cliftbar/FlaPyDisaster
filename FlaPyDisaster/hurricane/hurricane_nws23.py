@@ -203,7 +203,7 @@ def calc_windspeed(cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center,
         raise ValueError('No vmax and no cp')
 
     if cp_mb is not None:
-        cp_inhg = cp_mb * KpaToInhg
+        cp_inhg = cp_mb * MbToInhg
     pw_inhg = pw_kpa * KpaToInhg
 
     # Step 1: Calculate Maximum Gradient Windspeed if unknown, 10m-10min Average
