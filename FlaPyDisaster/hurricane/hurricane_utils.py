@@ -751,6 +751,8 @@ class HurdatCatalog:
 
             formDict['rmax'] = gb.flapy_app.hurricane_catalog.current_storm.rmax_nmi
             formDict['fspeed'] = None if auto_fspeed else gb.flapy_app.hurricane_catalog.current_storm.fspeed_kts
+            formDict['par'] = num_parallel if do_parallel else -1
+            formDict['maxDist'] = self.max_calc_dist
 
             r = requests.post("http://localhost:9000/hurTest", json = formDict)
 
@@ -759,8 +761,8 @@ class HurdatCatalog:
             base_uri = app.config.get('USER_FOLDER')
             base_uri += r'events/hurricane/'
             base_name = self.unique_name
-            # if event_suffix != '':
-            #     base_name += "_" + event_suffix
+            
+            base_name += "_" + "scala_temp"
             self.unique_name = base_name
 
             raster_uri = base_uri + base_name + ".png"
