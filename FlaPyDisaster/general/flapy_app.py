@@ -76,7 +76,7 @@ class FlaPyApp:
 
         return has_calcd
 
-    def calculate_event(self, name):
+    def calculate_event(self, name, lang="python"):
         storm = self.hurricane_catalog.get_storm_by_name(name)[0]
 
         print("Start Event Calculation")
@@ -85,10 +85,10 @@ class FlaPyApp:
         if self.type_of_parallel == 'multi':
             parallel = True
 
-        storm.calculate_grid(storm.px_per_degree, storm.px_per_degree, storm.fspeed_kts, storm.rmax_nmi, do_parallel=parallel, num_parallel=self.level_of_parallelism, force_recalc=self.force_calculate)
+        storm.calculate_grid(storm.px_per_degree, storm.px_per_degree, storm.fspeed_kts, storm.rmax_nmi, do_parallel=parallel, num_parallel=self.level_of_parallelism, force_recalc=self.force_calculate, lang=lang)
         end = time.time()
         print("Calculation Time: " + str(end - start))
-        print("num points: " + str(len(storm.result_array)))
+        # print("num points: " + str(len(storm.result_array)))
 
     def hurricane_set_event_settings(self, input_dict):
         storm = self.hurricane_catalog.current_storm
