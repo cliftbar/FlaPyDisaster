@@ -17,3 +17,12 @@ I've used both IntellJ Idea and Visual Studio 2015 Community Edition with succes
 ## Documentation
 Documentation is linked here because its included in the program
 [Documentation link](https://github.com/cliftbar/FlaPyDisaster/blob/master/FlaPyDisaster/static/markdown/documentation_main.md)
+
+## Scala Calculation Server
+There is a companion program for running calculations in Scala, [FlaPyScala](https://github.com/cliftbar/FlaPyScala/).  This is a Scala/Play server to run hurricane calculations.  Early prototyping on my Intel i5 is showing that in Python:
+* Hurricane Matthew 2016 10px per degree, 3 processes, 9 minutes
+* Hurricane Matthew 2016  100px per dgree, 3 processes, 2 hours
+
+And for Scala:
+* For Matthew 2016 10px per degree, Scala at 2 cores runs in approximately 10 seconds
+* For Matthew 2016 100px per degree, Scala at 2 cores runs in approximately 6 min
