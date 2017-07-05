@@ -737,6 +737,7 @@ class HurdatCatalog:
             return geojson_collection
 
         def calculate_grid_scala(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
+            # Send event to scala
             formData = {}
             formData = list(map((lambda x: {"catalogNumber": self.catalog_number, "stormName": self.name, "basin": self.basin, "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"), "eyeLat_y": x.point_lat_lon()[0], "eyeLon_x": x.point_lat_lon()[1], "maxWind_kts": x.max_wind_kts, "minCp_mb": x.min_pressure_mb, "sequence": x.sequence, "fSpeed_kts": x.fspeed_kts, "isLandfallPoint": bool(x.is_landfall), "rMax_nmi": self.rmax_nmi, "gwaf": self.gwaf, "heading": x.heading_to_next_point}), self.track_points))
 
@@ -754,8 +755,10 @@ class HurdatCatalog:
             formDict['par'] = num_parallel if do_parallel else -1
             formDict['maxDist'] = self.max_calc_dist
 
+            # send request
             r = requests.post("http://localhost:9000/hurTest", json = formDict)
 
+            # Build event data from scala image file, as a byproduct saves the event to disk completely
             self.raster_bands = 4
             self.raster_output_band = 1
             base_uri = app.config.get('USER_FOLDER')
@@ -767,15 +770,14 @@ class HurdatCatalog:
 
             raster_uri = base_uri + base_name + ".png"
 
-            # ini_uri = base_uri + self.unique_name + "_" + event_suffix + ".ini"
             ini_uri = self.save_event_ini(base_uri, base_name)
 
-            # data_path = base_uri + self.unique_name +  "_" +  event_suffix + ".txt"
             self.save_base_data(base_uri, base_name)
 
-            # copy image to static folder for display, feels bad
+            # copy image from scala land to python land.  Assumes running on the same server with acess to both server directories
             shutil.copy2(r.json()['imageUri'], raster_uri)
 
+            # set current event what's read from 
             self.parse_from_saved_event(ini_uri)
 
             print(r.status_code)
