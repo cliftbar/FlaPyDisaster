@@ -10,9 +10,12 @@ import joblib as job
 import configparser as cpar
 import numpy as np
 import mapping.gdal_mapping as gdm
+import requests
 # from app import app
 import shutil
 import globes as gb
+from app import app
+
 
 
 def calc_bearing_north_zero(lat_ref, lon_ref, lat_loc, lon_loc):
@@ -93,7 +96,7 @@ class HurdatCatalog:
                              "r50_ne_nmi", "r500_se_nmi", "r50_sw_nmi", "r50_nw_nmi", "r64_ne_nmi", "r64_se_nmi",
                              "r64_sw_nmi", "r64_nw_nmi"]
         model_headers = ["catalog_number", "name", "basin", "timestamp", "lat_y", "lon_x", "max_wind_kts", "min_cp_mb",
-                         "sequence", "fspeed_kts", "is_landfall_point", "rmax_nmi", "gwaf"]
+                         "sequence", "fspeed_kts", "is_landfall_point", "heading", "rmax_nmi", "gwaf"]
 
         unisys_headers = ["NAME", "ADV", "LAT", "LON", "TIME", "WIND", "PR", "STAT"]
 
@@ -261,7 +264,8 @@ class HurdatCatalog:
                         , self.min_pressure_mb
                         , self.sequence
                         , self.fspeed_kts
-                        , self.is_landfall]
+                        , self.is_landfall
+                        , self.heading_to_next_point]
 
         def __init__(self, hurdat_storm_data=None, fspeed_kts=15, rmax_nmi=15, gwaf=0.9):
             """
@@ -732,7 +736,54 @@ class HurdatCatalog:
             geojson_collection = list(map((lambda x: lm.create_feature(x[0], lm.GeojsonGeometry.point, x[1])['geojson']), temp_list))
             return geojson_collection
 
-        def calculate_grid(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
+        def calculate_grid_scala(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
+            # Send event to scala
+            formData = {}
+            formData = list(map((lambda x: {"catalogNumber": self.catalog_number, "stormName": self.name, "basin": self.basin, "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"), "eyeLat_y": x.point_lat_lon()[0], "eyeLon_x": x.point_lat_lon()[1], "maxWind_kts": x.max_wind_kts, "minCp_mb": x.min_pressure_mb, "sequence": x.sequence, "fSpeed_kts": x.fspeed_kts, "isLandfallPoint": bool(x.is_landfall), "rMax_nmi": self.rmax_nmi, "gwaf": self.gwaf, "heading": x.heading_to_next_point}), self.track_points))
+
+            formDict = {"track": formData}
+            formDict['BBox'] = {}
+            formDict['BBox']['topLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.top_lat_y
+            formDict['BBox']['botLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.bot_lat_y
+            formDict['BBox']['leftLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.left_lon_x
+            formDict['BBox']['rightLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.right_lon_x
+            formDict['BBox']['pxPerDegreeX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.block_per_degree_x
+            formDict['BBox']['pxPerDegreeY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.block_per_degree_y
+
+            formDict['rmax'] = gb.flapy_app.hurricane_catalog.current_storm.rmax_nmi
+            formDict['fspeed'] = None if auto_fspeed else gb.flapy_app.hurricane_catalog.current_storm.fspeed_kts
+            formDict['par'] = num_parallel if do_parallel else -1
+            formDict['maxDist'] = self.max_calc_dist
+
+            # send request
+            r = requests.post("http://localhost:9000/hurTest", json = formDict)
+
+            # Build event data from scala image file, as a byproduct saves the event to disk completely
+            self.raster_bands = 4
+            self.raster_output_band = 1
+            base_uri = app.config.get('USER_FOLDER')
+            base_uri += r'events/hurricane/'
+            base_name = self.unique_name
+            
+            base_name += "_" + "scala_temp"
+            self.unique_name = base_name
+
+            raster_uri = base_uri + base_name + ".png"
+
+            ini_uri = self.save_event_ini(base_uri, base_name)
+
+            self.save_base_data(base_uri, base_name)
+
+            # copy image from scala land to python land.  Assumes running on the same server with acess to both server directories
+            shutil.copy2(r.json()['imageUri'], raster_uri)
+
+            # set current event what's read from 
+            self.parse_from_saved_event(ini_uri)
+
+            print(r.status_code)
+            print(r.json()['imageUri'])
+
+        def calculate_grid_python(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
             """
             Calculate the hurricane footprint from the track, using the NWS 23 model
             :param px_per_deg_x: int
@@ -746,25 +797,6 @@ class HurdatCatalog:
             :param force_recalc: bool
             :return:
             """
-            if self.result_array is not None and force_recalc == 0:
-                return
-
-            if auto_fspeed:
-                self.calc_fspeed_per_point()
-
-            if rmax_nmi is None:
-                rmax_nmi = self.rmax_nmi
-
-            if bbox is None:
-                lat_list = list(map(lambda x: x.point_lat_lon()[0], self.track_points))
-                lon_list = list(map(lambda x: x.point_lat_lon()[1], self.track_points))
-                # diff_lat = max(int(max(lat_list) - min(lat_list)), 1)
-                # diff_lon = max(int(max(lon_list) - min(lon_list)), 1)
-                diff_lat = 2
-                diff_lon = 2
-                bbox = geno.BoundingBox(max(lat_list) + diff_lat, min(lat_list) - diff_lat, max(lon_list) + diff_lon, min(lon_list) - diff_lon)
-            self.lat_lon_grid = geno.LatLonGrid(bbox.top_lat_y, bbox.bot_lat_y, bbox.left_lon_x, bbox.right_lon_x, px_per_deg_x, px_per_deg_y)
-
             lat_lon_list = self.lat_lon_grid.get_lat_lon_list()
 
             results = []
@@ -780,6 +812,24 @@ class HurdatCatalog:
                 results = job.Parallel(n_jobs=num_parallel)(job.delayed(self.lat_lon_calc_loop)(self.track_points, point[0], point[1], rmax_nmi, self.max_calc_dist) for point in lat_lon_list)
 
             self.result_array = results
+
+        def calculate_grid(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False, lang="python"):
+            if self.result_array is not None and force_recalc == 0:
+                return
+
+            if auto_fspeed:
+                self.calc_fspeed_per_point()
+
+            if rmax_nmi is None:
+                rmax_nmi = self.rmax_nmi
+
+            self.BuildLatLonGrid(px_per_deg_x, px_per_deg_y, bbox)
+
+            if lang == "python":
+                self.calculate_grid_python(px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi, bbox, do_parallel, num_parallel, auto_fspeed, force_recalc)
+            else: 
+                self.calculate_grid_scala(px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi, bbox, do_parallel, num_parallel, auto_fspeed, force_recalc)
+            pass
 
         def lat_lon_calc_loop(self, tps, lat_y, lon_x, rmax_nmi, max_dist):
             """
@@ -799,7 +849,21 @@ class HurdatCatalog:
                     angle_to_center = calc_bearing_north_zero(eye_lat_lon[0], eye_lat_lon[1], lat_y, lon_x)
                     windspeed_temp = hm.calc_windspeed(track_point.min_pressure_mb, distance, eye_lat_lon[0], track_point.fspeed_kts, rmax_nmi, angle_to_center, track_point.heading_to_next_point, None, track_point.max_wind_kts, None)
                     max_wind = max(max_wind, windspeed_temp)
-            return [lat_y, lon_x, max_wind]
+            return [lat_y, lon_x, round(max_wind)]
+
+        def bBoxFromTrack(self):
+            lat_list = list(map(lambda x: x.point_lat_lon()[0], self.track_points))
+            lon_list = list(map(lambda x: x.point_lat_lon()[1], self.track_points))
+            # diff_lat = max(int(max(lat_list) - min(lat_list)), 1)
+            # diff_lon = max(int(max(lon_list) - min(lon_list)), 1)
+            diff_lat = 2
+            diff_lon = 2
+            return geno.BoundingBox(max(lat_list) + diff_lat, min(lat_list) - diff_lat, max(lon_list) + diff_lon, min(lon_list) - diff_lon)
+
+        def BuildLatLonGrid(self, px_per_deg_x, px_per_deg_y, bbox = None):
+            if bbox is None:
+                bbox = self.bBoxFromTrack()
+            self.lat_lon_grid = geno.LatLonGrid(bbox.top_lat_y, bbox.bot_lat_y, bbox.left_lon_x, bbox.right_lon_x, px_per_deg_x, px_per_deg_y)
 
         def grid_to_geojson(self):
             """
@@ -823,7 +887,6 @@ class HurdatCatalog:
             :param base_uri: str uri of save location, with trailing '/'
             :return: None
             """
-
             self.raster_bands = raster_bands
             self.raster_output_band = raster_output_band
 
@@ -873,7 +936,7 @@ class HurdatCatalog:
             config_file.set(storm_parameters_section, 'rmax_nmi', str(self.rmax_nmi))
             config_file.set(storm_parameters_section, 'basin', self.basin)
             config_file.set(storm_parameters_section, 'gwaf', str(self.gwaf))
-            config_file.set(storm_parameters_section, 'cyclone_number', str(self.catalog_number))
+            config_file.set(storm_parameters_section, 'cyclone_number', str(self.catalog_number) if self.catalog_number is not None else None)
             config_file.set(storm_parameters_section, 'year', str(self.year))
             config_file.set(storm_parameters_section, 'name', self.name)
             config_file.set(storm_parameters_section, 'fspeed_from_points', str(self.fspeed_from_points))
@@ -906,6 +969,8 @@ class HurdatCatalog:
             ini_uri = base_uri + name + ".ini"
 
             gb.save_config(config_file, ini_uri)
+
+            return ini_uri
 
         def save_base_data(self, base_uri, file_name=None):
             """

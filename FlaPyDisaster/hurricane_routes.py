@@ -6,6 +6,9 @@ import general.general_utils as genu
 import general.general_colors as genc
 import time
 import urllib.request as urlr
+import numpy as np
+import requests
+import json
 
 # global variables
 catalog = None
@@ -73,9 +76,12 @@ def change_table():
 
         if do_calc == 1:
             gb.flapy_app.calculate_event(name)
-
+        elif do_calc == 2:
+            gb.flapy_app.calculate_event(name, "scala")
         ret_data = gb.flapy_app.get_event_table('current')
         calcd = gb.flapy_app.has_event_calcd('current')
+
+        
     else:
         ret_data = gb.flapy_app.get_event_table('null')
         calcd = 0
@@ -165,7 +171,7 @@ def hurricane_save_event_to_raster():
         with open('test_out.txt', 'w') as fi:
             fi.write("x\ty\tz\n")
             for line in gb.flapy_app.hurricane_catalog.current_storm.grid_to_xyz_list():
-                fi.write(str(line[0]) + "\t" + str(line[1]) + "\t" + str(line[2]) + "\n")
+                fi.write(str(line[0]) + "\t" + str(line[1]) + "\t" + str(int(round(line[2]))) + "\n")
         if event_save_suffix != '':
             base_name += "_" + event_save_suffix
         static_uri = r"images/" + base_name + ".png"
