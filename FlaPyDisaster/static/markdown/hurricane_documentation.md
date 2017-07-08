@@ -1,11 +1,11 @@
 # Hurricane Documentation
 
 ## Overview
-This program takes a hurricane track, calculates a wind footprint for the track, and maps the results.
+This program takes a hurricane track, calculates a wind footprint for the track, and maps the results.  Note: If viewing this through GitHub, images are located at [FlaPyDisaster/Documentation/Hurricane/NWS23](/FlaPyDisaster/Documentation/Hurricane/NWS23), but links in the document will not work.
 
 ## Hurricane Track
 A hurricane track is the measurements taken of a hurricane over time.  These are generally provided in flat text files.
-Currently, this program supports HURDAT as a track file source, as well as its own internal format.  Track files provide
+Currently, this program supports HURDAT tracks, Unisys realtime tracks, and its own internal format.  Track files provide
 the base inputs for model calculations.
 
 ### Hurdat Specification
@@ -17,21 +17,22 @@ updated about once a year, and contains data back to 1891 (though realistically,
 accuracy).  The model uses the following fields from the track files:
 
 * The cyclone number, name, and year of the storm to generate a unique name
-* Latitude as the Eye Latitude (converted from an EW/NS format to a +/- format)
+* Latitude/Longitude of the eye (converted from an EW/NS format to a +/- format)
 * Maximum Sustained Windspeed in Knots (1-min 10m average) (-99 indicates no data).  Note that currently the model does not
 correct the wind speed from 1-min 10m to 10-min 10m
 * Central pressure in millibars (-999 indicates no data)
 
 Other fields are saved when parsing the data file, but are currently unused.
 
-The model expects headers when loading the file, for a bad reason.  The program includes a hurdat file current to 2015
+The model expects headers when loading the file.  The program includes a hurdat file current to 2015
 [here](/get_file/Documentation/Hurricane/HURDAT/hurdat2-1851-2015-070616_with_header.txt).  Use this as a reference
 to format any new files.
  
-### Other sources
+### Unisys Tracks
 For real time tracks, [Unysis](http://weather.unisys.com/hurricane/) maintains tracks from
-current TPC advisories.  Eventually, this program will support imports of Unysis tracks.
+current TPC advisories.
 
+### Internal format
 The program also saves hurricane events in an internal format.  This will be detailed more in later sections, but includes an
 .ini file with event info and parameters, a tab delimited text file with track information, and optionally a raster file (.png)
 containing the wind footprint.
@@ -42,8 +43,7 @@ This program uses the NOAA NWS 23 as the model for footprint calculation.  The m
 
 ### Model implementation
 The model is contained in the hurricane module, in [hurricane_nws23.py](/get_file/hurricane/hurricane_nws23.py).  This file
-is restricted the scope of the mode: calculating the windspeed at a given point from a set of inputs.  The logic and organization
-for creating a footprint is in [hurricane_utils.py](/get_file/hurricane/hurricane_utils.py).
+is restricted the scope of the mode: calculating the windspeed at a given point from a set of inputs.  The logic and organization for creating a footprint is in [hurricane_utils.py](/get_file/hurricane/hurricane_utils.py).
 
 ### Model Inputs
 The model inputs are detailed below:
@@ -51,7 +51,7 @@ cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center, track_heading, pw_
 
 * cp_mb
   * Unit: Millibars
-  * Required: Ignored if vmax_kts is not provided
+  * Optional: Ignored if vmax_kts is provided
   * Minimum central pressure at the current point.  Used to calculate the maximum gradient wind speed (10-min 10m) at the point
    if it is not provided.
 * r_nmi
@@ -65,7 +65,7 @@ cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center, track_heading, pw_
 * fspeed_kts
   * Unit: Knots
   * Required
-  * Forward speed of the storm.
+  * Forward speed of the storm.  Can be a uniform value supplied for the storm, or calculated from the position of each track point.
 * rmax_nmi
   * Unit: Nautical Miles
   * Required
@@ -77,7 +77,7 @@ cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center, track_heading, pw_
 * track_heading
   * Unit: Degrees
   * Required
-  * Current bearing of the storm
+  * Current heading of the storm
 * pw_kpa
   * Unit: kilopascals
   * Optional: Default of 102.0 is provided
@@ -174,4 +174,17 @@ windspeed = (maximum_gradient_wind * gwaf * radial_decay_factor) + asymmetry_fac
 ```
 
 ### Model Outputs
-The model returns a wind speed for a given point in a storm, in knots (10-min 10m observation)
+The final output of the model is a point grid representing the maximum windspeed, in knots (10-min 10m observation), experienced at that point during the lifetime of the hurricane.  That is saved into a PNG image file, along with an ini file containing the following characteristics of the event:
+* Unique Name
+* Hurdat Basin (if applicable)
+* Radius of Max Winds
+* Gradient Wind Reduction Factor
+* Catalog number (if applicable)
+* Hurricane Year
+* Hurricane Name
+* Forward Speed
+* Number of output image bands
+* Image band used for storing windspeeds
+* Event bounding box
+* Event resolution in Pixels Per Degree
+
