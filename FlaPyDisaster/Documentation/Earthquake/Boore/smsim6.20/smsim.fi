@@ -1,0 +1,134 @@
+! start of smsim.fi (inserted into code via 'include smsim.fi')
+
+! Dates: 03/05/99 - Increased dimensions of rlow, slope, rdur, dur,
+!                   famp, and amp from 10 to 50
+!        06/05/00 - Added c_q to Q parameters
+!        06/08/00 - Added r_ref to gsprd parameters
+!        07/30/00 - Added computation of twopi
+!        01/27/01 - Added new time series window parameters
+!        01/27/02 - Added rv parameters xi and zup_used and new geom spread
+!                   params (to allow for magnitude-dependent slopes)
+!        08/08/02 - Removed irmvdc parameter from tdsims_params
+!        04/10/08 - Add parameters to allow for a general two-corner source.
+!        12/04/09 - Add calculated values of durpath and dursource so can
+!                   write them if desired.
+!        12/16/09 - Add a new common block with coefficients relating
+!                   log10(f_ff) to M (this is motivated by Atkinson and Silva,
+!                   2000, but may be a way of capturing the effect of a
+!                   finite-fault without computing Reff).  Set iflag_heff=1
+!                   if want to compute heff (it does not work to set
+!                   the coefficients = 0, because heff = 1 will then be
+!                   computed.
+!                   I also added rmod and heff to the magdist common block.
+!        01/17/11 - Add trms to misc common block
+!        01/18/11 - Added Der Kiureghian and Asfura rv variables
+!        01/21/11 - Introduce a variable dur4n for computing the number of zero crossings
+!                   and extrema do that I can experiment with setting it to durex and to trms.
+!                   also return peak estimates using CL and the DK rms-peak factors, as well
+!                   as using dur4n = durex and dur4n = trms.  This is for purposes
+!                   of investigating these choices, rather than writing a number of special
+!                   purpose programs or adding a number of arguments to subroutine
+!                   calls.
+!        01/29/11 - Add amom0,1,2,4 to common /rv/
+!        04/05/11 - Replaced "heff" and "h_eff" with "f_ff" (finite-fault factor)
+!        05/23/11 - Add avib to common /rv/
+!        05/27/11 - Add Liu and Pezeshk (1999) avib (what they call k) to common /rv/
+!        06/07/11 - Rearrange entries in rv common block
+!        11/29/11 - Add option for frequency-dependent geometrical spreading.
+!        01/23/12 - Add DMB gsprd(f) parameters
+!        01/28/12 - Add rms_from_get_motion to rv common block
+!        06/23/14 - Added pk_rms_dk80_eq2, pk_dk80_eq2 to rv common block
+!        10/08/14 - Add possibility of two lines for f_ff
+!        10/28/14 - Add gsprd, slope to gsprd_params common block
+!        12/18/14 - Add possibility of two lines plus a transition for f_ff; this
+!                   required adding "dm_f_ff" to common /f_ff_params/ ("dm" stands for "delta M")
+!        12/11/15 - Added high cut filter information
+
+      real f_ff, rmod, c1_log10_f_ff, c2_log10_f_ff,
+     :        mh_f_ff, c3_log10_f_ff, c4_log10_f_ff,
+     :        dm_f_ff, m1t_f_ff, m2t_f_ff,
+     :        c0t_f_ff, c1t_f_ff, c2t_f_ff, c3t_f_ff 
+      real rho, beta, prtitn, rtp, fs, const
+      real stressc, dlsdm, amagc,
+     :     stress, fa, fb, am0, am0b_m0, fbdfa,
+     :     c1_fa, c2_fa, amagc4fa,
+     :     c1_eps, c2_eps, amagc4eps, mag4eps1
+      real w_fa, w_fb, pi, twopi
+      real fr1, qr1, s1, ft1, ft2, fr2, qr2, s2, slast, c_q
+      real rlow(50), a_s(50), b_s(50), m_s(50)
+      real rdur(50), dur(50), famp(50), amp(50)
+      real dur_fctr, dt, tshift, taper, seed 
+      real kappa_f
+      integer nknots, numsource, nsprd_segs, namps, nsims
+      integer indxwind, osc_crrctn, i_gsprd_option, nlines_f_ff
+      character title*70
+      logical new_mr
+
+      common /title/ title
+      common /magdist/ r, f_ff, rmod, amag
+      common /f_ff_params/ 
+     :       iflag_f_ff, nlines_f_ff,
+     :       c1_log10_f_ff, c2_log10_f_ff,
+     :       c3_log10_f_ff, c4_log10_f_ff,
+     :       mh_f_ff, m1t_f_ff, m2t_f_ff,
+     :       dm_f_ff, c0t_f_ff, c1t_f_ff, c2t_f_ff, c3t_f_ff
+      common /const_params/ rho, beta, prtitn, rtp, fs, pi, twopi, 
+     :                      pidiv2,
+     :                      const, iaorins, idva, freq_indep_factor
+      common /source_shape_params/ numsource, pf_a, pd_a, pf_b, pd_b 
+      common /source_scale_params/ stressc, dlsdm, amagc,
+     :                       stress, fa, fb, am0, am0b_m0, fbdfa,
+     :                       c1_fa, c2_fa, amagc4fa,
+     :                       c1_eps, c2_eps, amagc4eps, mag4eps1
+      common /gsprd_params/ i_gsprd_option,
+     :                      nsprd_segs, r_ref, rlow, a_s, b_s, m_s,
+     :                      gsprd, slope
+      common /dmb_gsprd_params/ r1_dmb_gsprd, 
+     :        pgsprd_r_le_r1_lf, pgsprd_r_le_r1_hf, pgsprd_r_gt_r1, 
+     :        ft1_dmb_gsprd, ft2_dmb_gsprd
+      common /q_params/ fr1, qr1, s1, ft1, ft2, fr2, qr2, s2, c_q
+      common /source_dur_params/ w_fa, w_fb
+      common /path_dur_params/ nknots, rdur, dur, slast
+      common /site_amp_params/ namps, famp, amp
+      common /site_dimin_params/ fm, akappa, dkappadmag, amagkref
+      common /rs/ perosc, fosc, damp
+      common /rv/ fup, imom, zup, eps_int, amp_cutoff, osc_crrctn,
+     :     eps_rv, ane, anz, xi, zup_used,
+     :     pk_rms_cl_1,               pk_cl_1, 
+     :     pk_rms_cl_2,               pk_cl_2,
+     :     pk_rms_cl_eq68,            pk_cl_eq68,
+     :     pk_rms_cl_eq68_dur4n_trms, pk_cl_eq68_dur4n_trms, 
+     :     pk_rms_dk_2,               pk_dk_2,
+     :     pk_rms_dk_2_dur4n_trms,    pk_dk_2_dur4n_trms,
+     :     pk_rms_dk80_eq2,           pk_dk80_eq2, na_dk80_eq2,
+     :     arias_rv,
+     :     deltay, deltay_prime, anz_prime, 
+     :     ane_dur4n_trms, anz_dur4n_trms, 
+     :     amom0, amom1, amom2, amom4,
+     :     rms_from_get_motion,
+     :     avib, avib_bj84, avib_lp99
+      common /lowcut_filter__params/ fcut, norder
+      common /highcut_filter__params/ itype_hcfilt, fhc1, fhc2, 
+     :                                eta_hcfilt
+      common /wind_params/indxwind, taper, eps_w, eta_w, 
+     :                    f_tb2te, f_te_xtnd
+      common /tdsim_params/dur_fctr, dt, tshift, seed,
+     :                     nsims, iseed, iran_type
+      common /misc/freq20, dursource_calc, durpath_calc, durex, new_mr,
+     :             trms, dur4n
+     
+      save /title/, /const_params/
+      save /source_shape_params/, /source_scale_params/
+      save /gsprd_params/, /q_params/
+      save /source_dur_params/, /path_dur_params/
+      save /site_amp_params/, /site_dimin_params/
+      save /rs/
+      save /rv/
+      save /wind_params/, /tdsim_params/
+      save /misc/
+
+      pi = 4.0*atan(1.0)
+      twopi = 2.0 * pi
+      pidiv2 = pi/2.0
+
+* end of smsim.fi (inserted into code via "include smsim.fi")
