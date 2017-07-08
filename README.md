@@ -15,8 +15,7 @@ It can either be included globably or as a setting in the IDE, doesn't really ma
 I've used both IntellJ Idea and Visual Studio 2015 Community Edition with success, there shouldn't be anything preventing other IDEs though.
 
 ## Documentation
-Documentation is linked here
-[Documentation link](https://github.com/cliftbar/FlaPyDisaster/wiki/Hurricane-Documentation)
+Documentation is [here](https://github.com/cliftbar/FlaPyDisaster/wiki/Hurricane-Documentation)
 
 ## Scala Calculation Server
 There is a companion program for running calculations in Scala, [FlaPyScala](https://github.com/cliftbar/FlaPyScala/).  This is a Scala/Play server to run hurricane calculations.  Early prototyping on my Intel i5 is showing that in Python:
