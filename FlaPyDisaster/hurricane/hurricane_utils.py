@@ -614,7 +614,7 @@ class HurdatCatalog:
 
             min_cp, row = row.split(maxsplit=1)
             if min_cp == '-':
-                min_cp = None
+                min_cp = math.nan
             else:
                 min_cp = float(min_cp.strip())
             row = row.strip()
@@ -760,12 +760,8 @@ class HurdatCatalog:
             formDict['maxDist'] = self.max_calc_dist
 
             # send request
-            r = requests.get("http://localhost:9000/calculateHurricane", json = formDict)
-
-            #### Remove This, Testing Only!!! ######
-            print(r.status_code)
-            return
-
+            r = requests.get("http://localhost:9000/calculate/hurricane/nws23", json = formDict)
+            
             # Build event data from scala image file, as a byproduct saves the event to disk completely
             self.raster_bands = 4
             self.raster_output_band = 1
