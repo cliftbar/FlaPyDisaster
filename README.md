@@ -8,7 +8,7 @@ Anaconda is recommended for setting up the python environment for this program. 
 Check the Wiki for documentation [here](https://github.com/cliftbar/FlaPyDisaster/wiki/)
 
 ## Scala Calculation Server
-There is a companion program for running calculations in Scala, [FlaPyScala](https://github.com/cliftbar/FlaPyScala/).  This is a Scala/Play server to run hurricane calculations separate from the application server.
+There is a companion program for running calculations in Scala, [AkkaDisaster](https://github.com/cliftbar/AkkaDisaster/).  This is a Akka Http progam to run hurricane calculations separate from the application server.
 
 ## License
 MIT
