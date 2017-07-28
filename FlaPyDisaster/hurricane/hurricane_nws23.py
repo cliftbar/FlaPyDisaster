@@ -45,7 +45,7 @@ def linear_interpolation(x, x1, x2, y1, y2):
     :param y2:
     :return:
     """
-    return ((y2 - y1) / (x2 - x1)) * (x - x1)
+    return (((y2 - y1) / (x2 - x1)) * (x - x1)) + y1
 
 @jit(nopython=True,cache=True)
 def radial_decay(r_nmi, rmax_nmi):
