@@ -43,6 +43,9 @@ def unit_conversion_route():
     new_num = general_units.distance_conversion(number, unit_in, unit_out)
     return fl.jsonify(result=new_num)
 
+@app.route('/test/d3_test')
+def d3_test():
+    pass
 
 # asteroid result page route
 @app.route('/test/asteroid_result')
