@@ -306,7 +306,7 @@ function create_layer(layer_name){
  */
 function clear_layer(layer_name) {
     if(layer_name == 'canvas'){
-        canvas_settings.canvas_data = [];
+        canvas_settings.canvas_data_xyz = [];
         layers['canvas'].needRedraw();
     }
     else if (layer_name == 'legend'){
@@ -587,29 +587,18 @@ function geojson_hurdat_event_nocolor() {
  //http://bl.ocks.org/sumbera/11114288
  //https://github.com/Sumbera/gLayers.Leaflet
 
-//var canvas_data = []
-//var canvas_values = []
-// Set default color ramp
-// var canvas_colors = [[0,0,255], [0,128,0], [255,255,0], [255,165,0], [255,0,0]]
-var canvas_colors = ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
-var current_color_scheme = []
-
-// var hurricane_break_colors = [[220,220,220], [0,0,255], [0,128,0], [255,255,0], [255,165,0], [255,0,0], [255,0,255]]
 var hurricane_break_colors = ['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa500', '#ff0000', '#ff00ff']
-//var hurricane_breaks = [0, 34, 65, 84, 96, 114, 135]
 var hurricane_breaks = [0, 34, 65, 84, 96, 114, 135]
-var color_bins = [0, 20, 40, 60, 80]
-var canvas_opacity = 0.2
 
 var canvas_settings = {
-    canvas_data: []
-    , canvas_values: []
-    , canvas_colors: ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
+    canvas_data_xyz: []
+    , canvas_values_z: []
+    //, canvas_colors: ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
     , color_scheme: {
-        values: []
-        , colors: []
+        values: [0, 20, 40, 60, 80]
+        , colors: ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
     }
-    , canvas_opacity: 0.2
+    , opacity: 0.2
 }
 
 function onDrawLayer(info) {
@@ -620,7 +609,7 @@ function onDrawLayer(info) {
     ctx.clearRect(0, 0, info.canvas.width, info.canvas.height);
 
     // color info
-    var n = canvas_colors.length;
+    var n = canvas_settings.color_scheme.colors.length;
     var r = 5;
     var d = r * 2;
 
@@ -634,9 +623,9 @@ function onDrawLayer(info) {
     //offCtx.fillRect(0, 0, offScreen.width, offScreen.height);
 
     for (var i = 0; i < n; ++i) {
-        var color = canvas_colors[i];
+        var color = canvas_settings.color_scheme.colors[i];
         color_rgb = hexToRgb(color)
-        offCtx.fillStyle = "rgba(" + color_rgb[0].toString() + ", " + color_rgb[1].toString() + ", " + color_rgb[2].toString() + ", " + canvas_opacity.toString() + ")";
+        offCtx.fillStyle = "rgba(" + color_rgb[0].toString() + ", " + color_rgb[1].toString() + ", " + color_rgb[2].toString() + ", " + canvas_settings.opacity.toString() + ")";
         //console.log("rgb(" + color[0].toString() + ", " + color[1].toString() + ", " + color[2].toString() + ")");
         offCtx.beginPath();
         offCtx.arc(i * d + r, r, r, 0, 2 * Math.PI);
@@ -645,11 +634,11 @@ function onDrawLayer(info) {
     }
 
     // Lower bound version
-    for (var i = 0; i < canvas_settings.canvas_data.length; ++i) {
-        var p = canvas_settings.canvas_data[i];
+    for (var i = 0; i < canvas_settings.canvas_data_xyz.length; ++i) {
+        var p = canvas_settings.canvas_data_xyz[i];
         c = 0;
-        for (pos = color_bins.length; pos >= 0; --pos){
-            if(p[2] >= color_bins[pos]){
+        for (pos = canvas_settings.color_scheme.values.length; pos >= 0; --pos){
+            if (p[2] >= canvas_settings.color_scheme.values[pos]){
                 c = pos;
                 break;
             }
@@ -672,7 +661,7 @@ function onDrawLayer(info) {
 }
 
 function set_opacity(){
-    canvas_opacity = Math.trunc(document.getElementById("opacity_value").value) / 100
+    canvas_settings.opacity = Math.trunc(document.getElementById("opacity_value").value) / 100
     layers['canvas'].needRedraw();
 }
 
@@ -680,9 +669,9 @@ function set_opacity(){
 function hurdat_event_canvas() {
     $.getJSON("{{ url_for('map_hurricane_event_canvas') }}", {},
         function (data) {
-            canvas_settings.canvas_data = data.data;
-            canvas_colors = data.colors;
-            color_bins = data.bins;
+            canvas_settings.canvas_data_xyz = data.data;
+            canvas_settings.color_scheme.colors = data.colors;
+            canvas_settings.color_scheme.values = data.bins;
             layers['canvas'].needRedraw();
         }
     )
@@ -691,20 +680,20 @@ function hurdat_event_canvas() {
 function hurdat_event_canvas_nocolor() {
     $.getJSON("{{ url_for('map_hurricane_event_canvas_nocolor') }}", {},
         function (data) {
-            canvas_settings.canvas_data = data.data
+            canvas_settings.canvas_data_xyz = data.data
             var vals = data.data.map(function (val){
                 return val[2]
             });
             vals.sort(function(a, b){return a-b});
-            canvas_settings.current_color_scheme.colors = vals;
+            canvas_settings.canvas_values_z = vals;
             layers['canvas'].needRedraw();
-            add_legend(color_bins, canvas_colors);
+            add_legend(canvas_settings.color_scheme.values, canvas_settings.color_scheme.colors);
         }
     )
 }
 
 function hurdat_recalc_bins(values) {
-    color_bins = even_value_breaks(values, canvas_colors.length);
+    canvas_settings.color_scheme.values = even_value_breaks(values, canvas_settings.color_scheme.colors.length);
 }
 
 // By Lower Bound
@@ -718,7 +707,7 @@ function add_legend(bins, colors) {
 
         // loop through our density intervals and generate a label with a colored square for each interval
         for (var i = 0; i < bins.length; i++) {
-            var rgb = hexToRgb(canvas_colors[i])
+            var rgb = hexToRgb(canvas_settings.color_scheme.colors[i])
             color = 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
             div.innerHTML +=
                 '<i style="background:' + color + '"></i> ' +
@@ -774,7 +763,7 @@ function set_colors(){
            url: "{{ url_for('leaflet_get_color_array') }}",
            data: $("#bin_colors").serialize(),
            success: function (data) {
-               set_colors_success(data.color_scheme, canvas_settings.color_scheme.values);
+               set_colors_success(data.color_scheme, canvas_settings.canvas_values_z);
            }
          }
     );
@@ -791,40 +780,40 @@ function set_colors(){
 
 //DEP
 function set_colors_success(color_scheme, values){
-    canvas_colors = color_scheme[0];
-    color_bins = color_scheme[1]
+    canvas_settings.color_scheme.colors = color_scheme[0];
+    canvas_settings.color_scheme.values = color_scheme[1]
     //hurdat_recalc_bins(values);
     if(document.getElementById('color_bin_source').value == 'even'){
-        hurdat_recalc_bins(canvas_settings.color_scheme.values);
+        hurdat_recalc_bins(canvas_settings.canvas_values_z);
     }
     layers['canvas'].needRedraw();
 
     if('legend' in layers) {
         layers['legend'].remove();
-        add_legend(color_bins, canvas_colors);
+        add_legend(canvas_settings.color_scheme.values, canvas_settings.color_scheme.colors);
     }
 }
 
 function apply_colors() {
     update_scheme_from_picker()
 
-    canvas_colors = current_color_scheme[0];
-    color_bins = current_color_scheme[1]
+    //canvas_settings.color_scheme.colors = current_color_scheme[0];
+    //canvas_settings.color_scheme.values = current_color_scheme[1]
 
     if (document.getElementById('color_bin_source').value == 'even') {
-        hurdat_recalc_bins(canvas_settings.color_scheme.values);
+        hurdat_recalc_bins(canvas_settings.canvas_values_z);
     }
     layers['canvas'].needRedraw();
 
     if ('legend' in layers) {
         layers['legend'].remove();
-        add_legend(color_bins, canvas_colors);
+        add_legend(canvas_settings.color_scheme.values, canvas_settings.color_scheme.colors);
     }
 }
 
 function set_hurricane_colors(){
-    canvas_colors = hurricane_break_colors;
-    color_bins = hurricane_breaks;
+    canvas_settings.color_scheme.colors = hurricane_break_colors;
+    canvas_settings.color_scheme.values = hurricane_breaks;
     update_color_picker()
 
     $.ajax({
@@ -833,12 +822,12 @@ function set_hurricane_colors(){
            url: "{{ url_for('leaflet_get_color_array') }}",
            data: $("#bin_colors").serialize(),
            success: function (data) {
-                canvas_colors = data.color_array;
+               canvas_settings.color_scheme.colors = data.color_array;
                 layers['canvas'].needRedraw();
 
                 if('legend' in layers) {
                     layers['legend'].remove();
-                    add_legend(color_bins, canvas_colors);
+                    add_legend(canvas_settings.color_scheme.values, canvas_settings.color_scheme.colors);
                 }
            }
          }
@@ -858,12 +847,15 @@ function get_named_color_scheme() {
             scheme_name: val //document.getElementById('color_scheme_selector').value
         }
         , success: function (data) {
-            current_color_scheme = data.color_scheme
-            canvas_colors = data.color_scheme[0];
+            //current_color_scheme = data.color_scheme
+            
+            canvas_settings.color_scheme.colors = data.color_scheme[0];
+            //canvas_settings.color_scheme.values = data.color_scheme[1]
+
             if (document.getElementById('color_bin_source').value == 'even') {
-                hurdat_recalc_bins(canvas_settings.color_scheme.values);
+                hurdat_recalc_bins(canvas_settings.canvas_values_z);
             } else {
-                color_bins = data.color_scheme[1];
+                canvas_settings.color_scheme.values = data.color_scheme[1];
             }
 
             update_color_picker();
@@ -883,11 +875,11 @@ function change_named_color_scheme(){
                 scheme_name: document.getElementById('color_scheme_selector').value
             }
            ,success: function (data) {
-                canvas_colors = data.color_scheme[0];
+               canvas_settings.color_scheme.colors = data.color_scheme[0];
                 if(document.getElementById('color_bin_source').value == 'even'){
-                    hurdat_recalc_bins(canvas_settings.color_scheme.values);
+                    hurdat_recalc_bins(canvas_settings.canvas_values_z);
                 }else{
-                    color_bins = data.color_scheme[1];
+                    canvas_settings.color_scheme.values = data.color_scheme[1];
                 }
 
                 update_color_picker()
@@ -909,9 +901,9 @@ function save_color_scheme() {
         url: "{{ url_for('leaflet_save_color_scheme') }}",
         data: {
             color_data: JSON.stringify({
-                color_scheme_colors: current_color_scheme[0],
-                color_scheme_values: current_color_scheme[1],
-                color_scheme_name: name
+                color_scheme_colors: canvas_settings.color_scheme.colors
+                ,color_scheme_values: canvas_settings.color_scheme.values
+                ,color_scheme_name: name
             })
         },
         success: function () {
@@ -931,21 +923,25 @@ function update_color_picker(){
         remove_color();
     }
 
-    while (color_count < canvas_colors.length){
-        add_color(canvas_colors[color_count], color_bins[color_count]);
+    while (color_count < canvas_settings.color_scheme.colors.length){
+        add_color(canvas_settings.color_scheme.colors[color_count], canvas_settings.color_scheme.values[color_count]);
     }
 }
 
 function update_scheme_from_picker() {
-    var new_scheme = [[],[]]
+    var new_scheme = {
+        values: []
+        , colors: []
+    }
+
     for (var i = 0; i < color_count; ++i) {
         var element = document.getElementById("div_color_" + (color_count - 1))
         new_color = document.getElementById("color_" + i).value
         new_value = parseInt(document.getElementById("color_val_" + i).value)
-        new_scheme[0].push(new_color)
-        new_scheme[1].push(new_value)
+        new_scheme.colors.push(new_color)
+        new_scheme.values.push(new_value)
     }
-    current_color_scheme = new_scheme
+    canvas_settings.color_scheme = new_scheme
 }
 /*****************
  * Style methods *
