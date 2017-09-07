@@ -760,7 +760,7 @@ class HurdatCatalog:
             formDict['maxDist'] = self.max_calc_dist
 
             # send request
-            r = requests.get("http://localhost:9000/calculate/hurricane/nws23", json = formDict)
+            r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
             
             # Build event data from scala image file, as a byproduct saves the event to disk completely
             self.raster_bands = 4

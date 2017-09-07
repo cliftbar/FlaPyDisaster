@@ -306,7 +306,7 @@ function create_layer(layer_name){
  */
 function clear_layer(layer_name) {
     if(layer_name == 'canvas'){
-        canvas_data = [];
+        canvas_settings.canvas_data = [];
         layers['canvas'].needRedraw();
     }
     else if (layer_name == 'legend'){
@@ -587,11 +587,12 @@ function geojson_hurdat_event_nocolor() {
  //http://bl.ocks.org/sumbera/11114288
  //https://github.com/Sumbera/gLayers.Leaflet
 
-var canvas_data = []
-var canvas_values = []
+//var canvas_data = []
+//var canvas_values = []
 // Set default color ramp
 // var canvas_colors = [[0,0,255], [0,128,0], [255,255,0], [255,165,0], [255,0,0]]
-var canvas_colors = [[0,0,255], [0,128,0], [255,255,0], [255,165,0], [255,0,0]]
+var canvas_colors = ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
+var current_color_scheme = []
 
 // var hurricane_break_colors = [[220,220,220], [0,0,255], [0,128,0], [255,255,0], [255,165,0], [255,0,0], [255,0,255]]
 var hurricane_break_colors = ['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa500', '#ff0000', '#ff00ff']
@@ -599,6 +600,18 @@ var hurricane_break_colors = ['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa5
 var hurricane_breaks = [0, 34, 65, 84, 96, 114, 135]
 var color_bins = [0, 20, 40, 60, 80]
 var canvas_opacity = 0.2
+
+var canvas_settings = {
+    canvas_data: []
+    , canvas_values: []
+    , canvas_colors: ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
+    , color_scheme: {
+        values: []
+        , colors: []
+    }
+    , canvas_opacity: 0.2
+}
+
 function onDrawLayer(info) {
     // Timing debug code
     //var t0 = Date.now();
@@ -622,7 +635,8 @@ function onDrawLayer(info) {
 
     for (var i = 0; i < n; ++i) {
         var color = canvas_colors[i];
-        offCtx.fillStyle = "rgba(" + color[0].toString() + ", " + color[1].toString() + ", " + color[2].toString() + ", " + canvas_opacity.toString() + ")";
+        color_rgb = hexToRgb(color)
+        offCtx.fillStyle = "rgba(" + color_rgb[0].toString() + ", " + color_rgb[1].toString() + ", " + color_rgb[2].toString() + ", " + canvas_opacity.toString() + ")";
         //console.log("rgb(" + color[0].toString() + ", " + color[1].toString() + ", " + color[2].toString() + ")");
         offCtx.beginPath();
         offCtx.arc(i * d + r, r, r, 0, 2 * Math.PI);
@@ -631,8 +645,8 @@ function onDrawLayer(info) {
     }
 
     // Lower bound version
-    for (var i = 0; i < canvas_data.length; ++i) {
-        var p = canvas_data[i];
+    for (var i = 0; i < canvas_settings.canvas_data.length; ++i) {
+        var p = canvas_settings.canvas_data[i];
         c = 0;
         for (pos = color_bins.length; pos >= 0; --pos){
             if(p[2] >= color_bins[pos]){
@@ -662,10 +676,11 @@ function set_opacity(){
     layers['canvas'].needRedraw();
 }
 
+//DEP
 function hurdat_event_canvas() {
     $.getJSON("{{ url_for('map_hurricane_event_canvas') }}", {},
         function (data) {
-            canvas_data = data.data;
+            canvas_settings.canvas_data = data.data;
             canvas_colors = data.colors;
             color_bins = data.bins;
             layers['canvas'].needRedraw();
@@ -676,15 +691,12 @@ function hurdat_event_canvas() {
 function hurdat_event_canvas_nocolor() {
     $.getJSON("{{ url_for('map_hurricane_event_canvas_nocolor') }}", {},
         function (data) {
-            canvas_data = data.data
+            canvas_settings.canvas_data = data.data
             var vals = data.data.map(function (val){
                 return val[2]
             });
             vals.sort(function(a, b){return a-b});
-            canvas_values = vals;
-//            canvas_colors = data.default_colors[0]
-//            color_bins = data.default_colors[1]
-            //hurdat_recalc_bins(canvas_values);
+            canvas_settings.current_color_scheme.colors = vals;
             layers['canvas'].needRedraw();
             add_legend(color_bins, canvas_colors);
         }
@@ -706,7 +718,8 @@ function add_legend(bins, colors) {
 
         // loop through our density intervals and generate a label with a colored square for each interval
         for (var i = 0; i < bins.length; i++) {
-            color = 'rgb('+ canvas_colors[i][0] + ',' + canvas_colors[i][1] + ',' + canvas_colors[i][2] + ')';
+            var rgb = hexToRgb(canvas_colors[i])
+            color = 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
             div.innerHTML +=
                 '<i style="background:' + color + '"></i> ' +
                 Math.trunc(bins[i]) + (Math.trunc(bins[i + 1]) ? 'kts &ndash; ' + Math.trunc(bins[i + 1]) + ' kts<br>' : '+');
@@ -753,6 +766,7 @@ function remove_color(){
     document.getElementById('number_colors').value = color_count;
 }
 
+//DEP
 function set_colors(){
     $.ajax({
            type: "POST",
@@ -760,31 +774,49 @@ function set_colors(){
            url: "{{ url_for('leaflet_get_color_array') }}",
            data: $("#bin_colors").serialize(),
            success: function (data) {
-                set_colors_success(data.color_scheme, canvas_values);
+               set_colors_success(data.color_scheme, canvas_settings.color_scheme.values);
            }
          }
     );
 
-    if (document.getElementById('save_color_scheme').checked){
-        var name = document.getElementById('color_scheme_name').value;
-        var option = document.createElement("option");
-        option.value = name;
-        option.text = name;
-        option.selected = true;
-        document.getElementById('color_scheme_selector').add(option);
-    }
+    //if (document.getElementById('save_color_scheme').checked){
+    //    var name = document.getElementById('color_scheme_name').value;
+    //    var option = document.createElement("option");
+    //    option.value = name;
+    //    option.text = name;
+    //    option.selected = true;
+    //    document.getElementById('color_scheme_selector').add(option);
+    //}
 }
 
+//DEP
 function set_colors_success(color_scheme, values){
     canvas_colors = color_scheme[0];
     color_bins = color_scheme[1]
     //hurdat_recalc_bins(values);
     if(document.getElementById('color_bin_source').value == 'even'){
-        hurdat_recalc_bins(canvas_values);
+        hurdat_recalc_bins(canvas_settings.color_scheme.values);
     }
     layers['canvas'].needRedraw();
 
     if('legend' in layers) {
+        layers['legend'].remove();
+        add_legend(color_bins, canvas_colors);
+    }
+}
+
+function apply_colors() {
+    update_scheme_from_picker()
+
+    canvas_colors = current_color_scheme[0];
+    color_bins = current_color_scheme[1]
+
+    if (document.getElementById('color_bin_source').value == 'even') {
+        hurdat_recalc_bins(canvas_settings.color_scheme.values);
+    }
+    layers['canvas'].needRedraw();
+
+    if ('legend' in layers) {
         layers['legend'].remove();
         add_legend(color_bins, canvas_colors);
     }
@@ -813,6 +845,33 @@ function set_hurricane_colors(){
     );
 }
 
+function get_named_color_scheme() {
+    var index = document.getElementById('color_scheme_selector').selectedIndex
+    var item = document.getElementById('color_scheme_selector')[index]
+    var val = item.value
+    var text = item.text
+
+    $.ajax({
+        type: "GET"
+        , url: "{{ url_for('leaflet_get_named_color_scheme') }}"
+        , data: {
+            scheme_name: val //document.getElementById('color_scheme_selector').value
+        }
+        , success: function (data) {
+            current_color_scheme = data.color_scheme
+            canvas_colors = data.color_scheme[0];
+            if (document.getElementById('color_bin_source').value == 'even') {
+                hurdat_recalc_bins(canvas_settings.color_scheme.values);
+            } else {
+                color_bins = data.color_scheme[1];
+            }
+
+            update_color_picker();
+        }
+    });
+}
+
+//DEP
 function change_named_color_scheme(){
     var item = document.getElementById('color_scheme_selector')
     var val = item.value
@@ -826,17 +885,44 @@ function change_named_color_scheme(){
            ,success: function (data) {
                 canvas_colors = data.color_scheme[0];
                 if(document.getElementById('color_bin_source').value == 'even'){
-                    hurdat_recalc_bins(canvas_values);
+                    hurdat_recalc_bins(canvas_settings.color_scheme.values);
                 }else{
                     color_bins = data.color_scheme[1];
                 }
 
-                //
-                //set_colors_success(data.color_scheme, canvas_values)
-
                 update_color_picker()
                 set_colors()
            }
+    });
+}
+
+function save_color_scheme() {
+    update_scheme_from_picker()
+    var name = document.getElementById('color_scheme_name').value;
+    if (name == "") {
+        alert("Supply a name")
+        return
+    }
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: "{{ url_for('leaflet_save_color_scheme') }}",
+        data: {
+            color_data: JSON.stringify({
+                color_scheme_colors: current_color_scheme[0],
+                color_scheme_values: current_color_scheme[1],
+                color_scheme_name: name
+            })
+        },
+        success: function () {
+
+            // Update color scheme selector
+            var option = document.createElement("option");
+            option.value = name;
+            option.text = name;
+            option.selected = true;
+            document.getElementById('color_scheme_selector').add(option);
+        }
     });
 }
 
@@ -850,6 +936,17 @@ function update_color_picker(){
     }
 }
 
+function update_scheme_from_picker() {
+    var new_scheme = [[],[]]
+    for (var i = 0; i < color_count; ++i) {
+        var element = document.getElementById("div_color_" + (color_count - 1))
+        new_color = document.getElementById("color_" + i).value
+        new_value = parseInt(document.getElementById("color_val_" + i).value)
+        new_scheme[0].push(new_color)
+        new_scheme[1].push(new_value)
+    }
+    current_color_scheme = new_scheme
+}
 /*****************
  * Style methods *
  *****************/
@@ -960,6 +1057,17 @@ function even_value_breaks(values, num_breaks){
     }
 
     return ret_breaks;
+}
+
+//Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
+function hexToRgb(hex) {
+    hex = hex.replace('#', '');
+    var bigint = parseInt(hex, 16);
+    var r = (bigint >> 16) & 255;
+    var g = (bigint >> 8) & 255;
+    var b = bigint & 255;
+
+    return [r, g, b]
 }
 
 /**************************

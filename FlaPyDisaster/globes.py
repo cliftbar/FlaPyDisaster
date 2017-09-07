@@ -29,7 +29,6 @@ def global_init():
     GlobalConfig = cpar.ConfigParser()
     GlobalConfig.read(GlobalConfigFileUri)
 
-
 def save_config(config=None, file_uri=None, overwrite=False):
     """
     Save the config file
@@ -45,7 +44,6 @@ def save_config(config=None, file_uri=None, overwrite=False):
     with open(file_uri, 'w') as configfile:
         config.write(configfile)
 
-
 def number_config_options(section):
     """
     Get the number of config options in a section
@@ -56,7 +54,6 @@ def number_config_options(section):
         return len(GlobalConfig.options(section))
     else:
         return 0
-
 
 def reset_application(reset_type):
     """

@@ -63,7 +63,7 @@ def natural_key(string_):
     """See http://www.codinghorror.com/blog/archives/001018.html"""
     return [int(s) if s.isdigit() else s for s in re.split(r'(\d+)', string_)]
 
-def gen_named_color_scheme_colors_from_config(name):
+def get_named_color_scheme_colors_from_config(name):
     """
     Read the Global config file and get the color scheme associated with the name.  System default styles are prioritized
     Eventually, make this any config file
@@ -71,6 +71,7 @@ def gen_named_color_scheme_colors_from_config(name):
     :return: list str list of hex codes for color scheme
     """
     color_scheme = None
+    # split_name = name.split('!', maxsplit=1)[1]
     if name in dict(gb.GlobalConfig.items('DefaultStyles')).keys():
         color_scheme = ast.literal_eval(gb.GlobalConfig.get('DefaultStyles', name))
     elif name in dict(gb.GlobalConfig.items('UserStyles')).keys():
@@ -78,3 +79,16 @@ def gen_named_color_scheme_colors_from_config(name):
 
     print(color_scheme)
     return color_scheme
+
+def save_named_color_scheme_to_config(name, hex_color_scheme):
+    print('Saving Color Scheme')
+    if 'UserStyles' not in gb.GlobalConfig.sections():
+        gb.GlobalConfig.add_section('UserStyles')
+    styles_dict = dict(map(lambda x: (x.split('!', maxsplit=1)[1], x.split('!', maxsplit=1)[0]), list(dict(gb.GlobalConfig.items('UserStyles')).keys())))
+    cnt = len(styles_dict)
+
+    # Update if style name already exists
+    if name in styles_dict.keys():
+        cnt = styles_dict[name]
+    gb.GlobalConfig.set('UserStyles', str(cnt) + "!" + name,  str(hex_color_scheme))
+    gb.save_config()

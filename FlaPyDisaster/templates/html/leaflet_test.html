@@ -43,12 +43,13 @@
                         <div class="modal-body">
                             <p>Color settings for map drawings</p>
                             <form name="bin_colors" id="bin_colors" action="set_colors()">
-                                <select id="color_scheme_selector" name="color_scheme_selector" onchange="change_named_color_scheme()">
-                                    <!--<option value="<select a table>">&lt;Select A Table&gt;</option>-->
-                                    {% for name in named_color_schemes %}
-                                    <option value="{{ name }}">{{ name.split('!', maxsplit=1)[1] }}</option>
-                                    {% endfor %}
-                                </select>
+                                <!--<select id="color_scheme_selector" name="color_scheme_selector" onchange="change_named_color_scheme()">-->
+                                <select id="color_scheme_selector" name="color_scheme_selector" onchange="get_named_color_scheme()">
+                                        <!--<option value="<select a table>">&lt;Select A Table&gt;</option>-->
+                                        {% for name in named_color_schemes %}
+                                        <option value="{{ name }}">{{ name.split('!', maxsplit=1)[1] }}</option>
+                                        {% endfor %}
+                                    </select>
                                 <select id="color_bin_source" name="color_bin_source">
                                     <option value="scheme">From Scheme</option>
                                     <option value="even">Even Breaks</option>
@@ -83,6 +84,8 @@
                             </form>
                         </div>
                         <div class="modal-footer">
+                            <button type="button" class="btn btn-default" onclick="save_color_scheme()">Save Scheme</button>
+                            <button type="button" class="btn btn-default" onclick="apply_colors()">Apply Scheme</button>
                             <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
                         </div>
                     </div>

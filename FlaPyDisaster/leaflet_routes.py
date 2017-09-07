@@ -4,13 +4,14 @@ from globes import *
 import general.general_colors as genc
 import geojson
 import mapping.leaflet_map as lm
+import json
 
 
 @app.route('/leaflet')
 @app.route('/leaflet/<string:sender_include>')
 def leaflet_redirect(sender_include='none'):
     color_ramp = genc.ColorPalettes.simple_escalating_5
-    color_scheme = genc.gen_named_color_scheme_colors_from_config('0!default')
+    color_scheme = genc.get_named_color_scheme_colors_from_config('0!default')
     print("test")
     print(color_scheme)
     user_color_num = number_config_options('UserStyles')
@@ -74,12 +75,30 @@ def leaflet_get_color_array():
 
 @app.route('/leaflet/change_named_color_scheme', methods=['POST', 'GET'])
 def leaflet_change_named_color_scheme():
-    print("here")
+    print("leaflet_change_named_color_scheme")
     scheme_name = fl.request.form['scheme_name']
     print(scheme_name)
-    color_scheme = genc.gen_named_color_scheme_colors_from_config(scheme_name)
+    color_scheme = genc.get_named_color_scheme_colors_from_config(scheme_name)
     print(color_scheme)
     return fl.jsonify(color_scheme=color_scheme)
+
+@app.route('/leaflet/get_named_color_scheme', methods=['GET'])
+def leaflet_get_named_color_scheme():
+    print("leaflet_get_named_color_scheme")
+    scheme_name = fl.request.args['scheme_name']
+    hex_color_scheme = genc.get_named_color_scheme_colors_from_config(scheme_name)
+    return fl.jsonify(color_scheme=hex_color_scheme)
+
+
+@app.route('/leaflet/save_named_color_scheme', methods=['POST'])
+def leaflet_save_color_scheme():
+    print("leaflet_save_color_scheme")
+    color_data = json.loads(fl.request.form['color_data'])
+    hex_color_scheme = [color_data['color_scheme_colors'], color_data['color_scheme_values']] # flapy_app.hex_scheme_from_form(form_dict)
+    name = color_data['color_scheme_name']
+    genc.save_named_color_scheme_to_config(name, hex_color_scheme)
+    print("scheme saved")
+    return json.dumps({'result': "Scheme Saved"})
 
 @app.route('/leaflet/draw_event')
 @app.route('/leaflet/draw_event/<string:sender_include>')
