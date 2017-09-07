@@ -306,7 +306,7 @@ function create_layer(layer_name){
  */
 function clear_layer(layer_name) {
     if(layer_name == 'canvas'){
-        canvas_settings.canvas_data_xyz = [];
+        canvas_settings.data_xyz = [];
         layers['canvas'].needRedraw();
     }
     else if (layer_name == 'legend'){
@@ -591,11 +591,11 @@ var hurricane_break_colors = ['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa5
 var hurricane_breaks = [0, 34, 65, 84, 96, 114, 135]
 
 var canvas_settings = {
-    canvas_data_xyz: []
-    , canvas_values_z: []
+    data_xyz: []
+    , values_z: []
     //, canvas_colors: ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
     , color_scheme: {
-        values: [0, 20, 40, 60, 80]
+        bins: [0, 20, 40, 60, 80]
         , colors: ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
     }
     , opacity: 0.2
@@ -634,11 +634,11 @@ function onDrawLayer(info) {
     }
 
     // Lower bound version
-    for (var i = 0; i < canvas_settings.canvas_data_xyz.length; ++i) {
-        var p = canvas_settings.canvas_data_xyz[i];
+    for (var i = 0; i < canvas_settings.data_xyz.length; ++i) {
+        var p = canvas_settings.data_xyz[i];
         c = 0;
-        for (pos = canvas_settings.color_scheme.values.length; pos >= 0; --pos){
-            if (p[2] >= canvas_settings.color_scheme.values[pos]){
+        for (pos = canvas_settings.color_scheme.bins.length; pos >= 0; --pos){
+            if (p[2] >= canvas_settings.color_scheme.bins[pos]){
                 c = pos;
                 break;
             }
@@ -669,9 +669,9 @@ function set_opacity(){
 function hurdat_event_canvas() {
     $.getJSON("{{ url_for('map_hurricane_event_canvas') }}", {},
         function (data) {
-            canvas_settings.canvas_data_xyz = data.data;
+            canvas_settings.data_xyz = data.data;
             canvas_settings.color_scheme.colors = data.colors;
-            canvas_settings.color_scheme.values = data.bins;
+            canvas_settings.color_scheme.bins = data.bins;
             layers['canvas'].needRedraw();
         }
     )
@@ -680,20 +680,20 @@ function hurdat_event_canvas() {
 function hurdat_event_canvas_nocolor() {
     $.getJSON("{{ url_for('map_hurricane_event_canvas_nocolor') }}", {},
         function (data) {
-            canvas_settings.canvas_data_xyz = data.data
+            canvas_settings.data_xyz = data.data
             var vals = data.data.map(function (val){
                 return val[2]
             });
             vals.sort(function(a, b){return a-b});
-            canvas_settings.canvas_values_z = vals;
+            canvas_settings.values_z = vals;
             layers['canvas'].needRedraw();
-            add_legend(canvas_settings.color_scheme.values, canvas_settings.color_scheme.colors);
+            add_legend(canvas_settings.color_scheme.bins, canvas_settings.color_scheme.colors);
         }
     )
 }
 
 function hurdat_recalc_bins(values) {
-    canvas_settings.color_scheme.values = even_value_breaks(values, canvas_settings.color_scheme.colors.length);
+    canvas_settings.color_scheme.bins = even_value_breaks(values, canvas_settings.color_scheme.colors.length);
 }
 
 // By Lower Bound
@@ -763,7 +763,7 @@ function set_colors(){
            url: "{{ url_for('leaflet_get_color_array') }}",
            data: $("#bin_colors").serialize(),
            success: function (data) {
-               set_colors_success(data.color_scheme, canvas_settings.canvas_values_z);
+               set_colors_success(data.color_scheme, canvas_settings.values_z);
            }
          }
     );
@@ -781,16 +781,16 @@ function set_colors(){
 //DEP
 function set_colors_success(color_scheme, values){
     canvas_settings.color_scheme.colors = color_scheme[0];
-    canvas_settings.color_scheme.values = color_scheme[1]
+    canvas_settings.color_scheme.bins = color_scheme[1]
     //hurdat_recalc_bins(values);
     if(document.getElementById('color_bin_source').value == 'even'){
-        hurdat_recalc_bins(canvas_settings.canvas_values_z);
+        hurdat_recalc_bins(canvas_settings.values_z);
     }
     layers['canvas'].needRedraw();
 
     if('legend' in layers) {
         layers['legend'].remove();
-        add_legend(canvas_settings.color_scheme.values, canvas_settings.color_scheme.colors);
+        add_legend(canvas_settings.color_scheme.bins, canvas_settings.color_scheme.colors);
     }
 }
 
@@ -798,22 +798,22 @@ function apply_colors() {
     update_scheme_from_picker()
 
     //canvas_settings.color_scheme.colors = current_color_scheme[0];
-    //canvas_settings.color_scheme.values = current_color_scheme[1]
+    //canvas_settings.color_scheme.bins = current_color_scheme[1]
 
     if (document.getElementById('color_bin_source').value == 'even') {
-        hurdat_recalc_bins(canvas_settings.canvas_values_z);
+        hurdat_recalc_bins(canvas_settings.values_z);
     }
     layers['canvas'].needRedraw();
 
     if ('legend' in layers) {
         layers['legend'].remove();
-        add_legend(canvas_settings.color_scheme.values, canvas_settings.color_scheme.colors);
+        add_legend(canvas_settings.color_scheme.bins, canvas_settings.color_scheme.colors);
     }
 }
 
 function set_hurricane_colors(){
     canvas_settings.color_scheme.colors = hurricane_break_colors;
-    canvas_settings.color_scheme.values = hurricane_breaks;
+    canvas_settings.color_scheme.bins = hurricane_breaks;
     update_color_picker()
 
     $.ajax({
@@ -827,7 +827,7 @@ function set_hurricane_colors(){
 
                 if('legend' in layers) {
                     layers['legend'].remove();
-                    add_legend(canvas_settings.color_scheme.values, canvas_settings.color_scheme.colors);
+                    add_legend(canvas_settings.color_scheme.bins, canvas_settings.color_scheme.colors);
                 }
            }
          }
@@ -850,12 +850,12 @@ function get_named_color_scheme() {
             //current_color_scheme = data.color_scheme
             
             canvas_settings.color_scheme.colors = data.color_scheme[0];
-            //canvas_settings.color_scheme.values = data.color_scheme[1]
+            //canvas_settings.color_scheme.bins = data.color_scheme[1]
 
             if (document.getElementById('color_bin_source').value == 'even') {
-                hurdat_recalc_bins(canvas_settings.canvas_values_z);
+                hurdat_recalc_bins(canvas_settings.values_z);
             } else {
-                canvas_settings.color_scheme.values = data.color_scheme[1];
+                canvas_settings.color_scheme.bins = data.color_scheme[1];
             }
 
             update_color_picker();
@@ -877,9 +877,9 @@ function change_named_color_scheme(){
            ,success: function (data) {
                canvas_settings.color_scheme.colors = data.color_scheme[0];
                 if(document.getElementById('color_bin_source').value == 'even'){
-                    hurdat_recalc_bins(canvas_settings.canvas_values_z);
+                    hurdat_recalc_bins(canvas_settings.values_z);
                 }else{
-                    canvas_settings.color_scheme.values = data.color_scheme[1];
+                    canvas_settings.color_scheme.bins = data.color_scheme[1];
                 }
 
                 update_color_picker()
@@ -902,7 +902,7 @@ function save_color_scheme() {
         data: {
             color_data: JSON.stringify({
                 color_scheme_colors: canvas_settings.color_scheme.colors
-                ,color_scheme_values: canvas_settings.color_scheme.values
+                ,color_scheme_values: canvas_settings.color_scheme.bins
                 ,color_scheme_name: name
             })
         },
@@ -924,13 +924,13 @@ function update_color_picker(){
     }
 
     while (color_count < canvas_settings.color_scheme.colors.length){
-        add_color(canvas_settings.color_scheme.colors[color_count], canvas_settings.color_scheme.values[color_count]);
+        add_color(canvas_settings.color_scheme.colors[color_count], canvas_settings.color_scheme.bins[color_count]);
     }
 }
 
 function update_scheme_from_picker() {
     var new_scheme = {
-        values: []
+        bins: []
         , colors: []
     }
 
@@ -939,7 +939,7 @@ function update_scheme_from_picker() {
         new_color = document.getElementById("color_" + i).value
         new_value = parseInt(document.getElementById("color_val_" + i).value)
         new_scheme.colors.push(new_color)
-        new_scheme.values.push(new_value)
+        new_scheme.bins.push(new_value)
     }
     canvas_settings.color_scheme = new_scheme
 }
