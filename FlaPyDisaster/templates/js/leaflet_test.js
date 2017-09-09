@@ -327,6 +327,14 @@ function clear_map() {
     }
 }
 
+function redrawLayers() {
+    layers['canvas'].needRedraw();
+    // Hurricane Track
+    clear_layer('hurricaneTrack_geojson')
+    setGeoJsonData()
+
+}
+
 /*
  * Places a marker at the given point.
  * If 'log_point' is true, logs the placement to javascript and python the console.
@@ -519,6 +527,57 @@ function hurricane_track_to_geojson() {
     )
 }
 
+var geoJsonStyleValues = {
+    radius: 8
+    , fillColor: "#ffffff"
+    , color: "#000000"
+    , weight: 1
+    , opacity: 1
+    , fillOpacity: 1.0
+}
+
+var geojsonSettings = {
+    data: []
+    , makeStyle: function (value) {
+        fillColor = colorSchemeColor_LowerBound(value)
+        return {
+            radius: geoJsonStyleValues.radius
+            , fillColor: fillColor
+            , color: geoJsonStyleValues.color
+            , weight: geoJsonStyleValues.weight
+            , opacity: geoJsonStyleValues.opacity
+            , fillOpacity: geoJsonStyleValues.fillOpacity
+        }
+    }
+}
+
+function setGeoJsonData() {
+    clear_layer('hurricaneTrack_geojson')
+    for (var i = 0; i < geojsonSettings.data.length; i++) {
+        var geojson = geojsonSettings.data[i];
+        layers['hurricaneTrack_geojson'].addData(geojson);
+    }
+}
+
+function hurricane_track_to_geojson_schemed() {
+    $.getJSON("{{ url_for('hurricane_track_to_geojson') }}", {},
+        function (data) {
+            // Add with static style.  Need to implement dynamic styles somehow
+            geojsonSettings.data = data.result
+            if (!layers.hasOwnProperty('hurricaneTrack_geojson')) {
+                var pointsLayer = L.geoJson([], {
+                    pointToLayer: function (feature, latlng) {
+                        return L.circleMarker(latlng, geojsonSettings.makeStyle(feature.properties.value));
+                    }
+                }).addTo(mymap);
+                layers['hurricaneTrack_geojson'] = pointsLayer;
+            }
+            
+            setGeoJsonData()
+        }
+    )
+}
+
 function hurricane_event_to_geojson() {
     $.getJSON("{{ url_for('hurricane_event_to_geojson') }}", {},
         function (data) {
@@ -588,8 +647,8 @@ function eventModal() {
     if (layers.hasOwnProperty('legend')) {
         clear_layer("legend")
     }
-    if (layers.hasOwnProperty('point_geoJSON_style')) {
-        clear_layer("point_geoJSON_style")
+    if (layers.hasOwnProperty('hurricaneTrack_geojson')) {
+        clear_layer("hurricaneTrack_geojson")
     }
     if (document.getElementById("showEventFootprintCheckbox").checked) {
         showLegend = document.getElementById("showEventLegendCheckbox").checked
@@ -597,7 +656,7 @@ function eventModal() {
     }
     
     if (document.getElementById("showEventTrackCheckbox").checked) {
-        hurricane_track_to_geojson()
+        hurricane_track_to_geojson_schemed()
     }
 }
 
@@ -654,13 +713,7 @@ function onDrawLayer(info) {
     // Lower bound version
     for (var i = 0; i < canvas_settings.data_xyz.length; ++i) {
         var p = canvas_settings.data_xyz[i];
-        c = 0;
-        for (pos = canvas_settings.color_scheme.bins.length; pos >= 0; --pos){
-            if (p[2] >= canvas_settings.color_scheme.bins[pos]){
-                c = pos;
-                break;
-            }
-        }
+        var c = colorSchemeBin_LowerBound(p[2])
         dot = info.layer._map.latLngToContainerPoint([p[0], p[1]]); //can move this out of loop
         ctx.drawImage(offScreen, c * d, 0, d, d, dot.x - r, dot.y - r, d, d);
     }
@@ -827,7 +880,9 @@ function apply_colors() {
     if (document.getElementById('color_bin_source').value == 'even') {
         hurdat_recalc_bins(canvas_settings.values_z);
     }
-    layers['canvas'].needRedraw();
+    //layers['canvas'].needRedraw();
+
+    redrawLayers()
 
     if ('legend' in layers) {
         layers['legend'].remove();
@@ -1090,7 +1145,7 @@ function colorSchemeBin_LowerBound(value) {
             break;
         }
     }
-    return c
+    return bin
 }
 
 function colorSchemeColor_LowerBound(value) {
