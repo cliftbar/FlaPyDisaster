@@ -1,6 +1,6 @@
 ﻿import flask as fl
 from app import app
-from globes import *
+import globes as gb
 import general.general_colors as genc
 import geojson
 import mapping.leaflet_map as lm
@@ -14,7 +14,8 @@ def leaflet_redirect(sender_include='none'):
     color_scheme = genc.get_named_color_scheme_colors_from_config('0!default')
     print("test")
     print(color_scheme)
-    user_color_num = number_config_options('UserStyles')
+    
+    user_color_num = gb.number_config_options('UserStyles')
     named_color_schemes = genc.get_named_color_schemes_from_config()
     return fl.render_template('html/leaflet_test.html'
                               , title="Leaflet"
@@ -24,6 +25,25 @@ def leaflet_redirect(sender_include='none'):
                               , user_color_num=user_color_num
                               , named_color_schemes=named_color_schemes
                               , current_user=fl.session['username'] )
+
+@app.route('/leaflet/mapping')
+def leaflet_mapping(sender_include='none'):
+    color_ramp = genc.ColorPalettes.simple_escalating_5
+    color_scheme = genc.get_named_color_scheme_colors_from_config('0!default')
+    user_color_num = gb.number_config_options('UserStyles')
+    named_color_schemes = genc.get_named_color_schemes_from_config()
+    
+    storm_name = gb.flapy_app.hurricane_catalog.current_storm.unique_name
+
+    return fl.render_template('html/leaflet_mapping.html'
+                              #, title="Mapping"
+                              , sender_include=sender_include
+                              , default_colors=color_scheme
+                              , user_color_num=user_color_num
+                              , named_color_schemes=named_color_schemes
+                              , event_name = storm_name
+                              , current_user=fl.session['username'] )
+
 
 
 @app.route('/leaflet/test_latlng', methods=['POST'])

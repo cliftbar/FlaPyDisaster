@@ -9,6 +9,13 @@ var layers = {};
 
 
 
+/*****************************
+ * Leaflet Map Initalization *
+ *****************************/
+
+/*
+ * Patch leaflet functions for our specific needs
+ */
 function leaflet_draw_monkey_patches(){
     // Override leaflet draw function here for 1.0 support.  spliceLatLngs is no longer supported
     L.Edit.Poly.prototype._removeMarker = function(marker) {
@@ -107,12 +114,6 @@ function leaflet_draw_monkey_patches(){
 
 
 }
-
-
-/*****************************
- * Leaflet Map Initalization *
- *****************************/
-
 /*
  * Initialization function for leaflet page, runs on the html.body.onload
  */
@@ -178,23 +179,23 @@ function add_handlers() {
  * On Click handler to add a marker to the map on click if the control checkbox is checked.
  * Also stores the click location for debugging
  */
-//function onMapClick(e) {
-//    // Popup example
-//    popup
-//        .setLatLng(e.latlng)
-//        .setContent("You clicked the map at " + e.latlng.toString())
-//        .openOn(mymap);
-//
-//    last_point_clicked = e.latlng;
-//
-//    var add_point_cbx = document.getElementById('add_marker_CBX');
-//    if (add_point_cbx.checked) {
-//        place_marker(e.latlng, true)
-//    }
-//}
+function onMapClick(e) {
+    // Popup example
+    popup
+        .setLatLng(e.latlng)
+        .setContent("You clicked the map at " + e.latlng.toString())
+        .openOn(mymap);
+
+    last_point_clicked = e.latlng;
+
+    var add_point_cbx = document.getElementById('add_marker_CBX');
+    if (add_point_cbx.checked) {
+        place_marker(e.latlng, true)
+    }
+}
 
 /*
- * Initialize leaflet map, setting the view to Somerville, MA, with a zoom level of 13
+ * Initialize leaflet map
  */
 function init_map() {
     mymap = L.map('mapid',
@@ -580,15 +581,32 @@ function geojson_hurdat_event_nocolor() {
     )
 }
 
+function eventModal() {
+    if (layers.hasOwnProperty('canvas')) {
+        clear_layer("canvas")
+    }
+    if (layers.hasOwnProperty('legend')) {
+        clear_layer("legend")
+    }
+    if (layers.hasOwnProperty('point_geoJSON_style')) {
+        clear_layer("point_geoJSON_style")
+    }
+    if (document.getElementById("showEventFootprintCheckbox").checked) {
+        showLegend = document.getElementById("showEventLegendCheckbox").checked
+        hurdat_event_canvas_nocolor()
+    }
+    
+    if (document.getElementById("showEventTrackCheckbox").checked) {
+        hurricane_track_to_geojson()
+    }
+}
+
 /********************
  * Canvas Functions *
  ********************/
  //http://stackoverflow.com/questions/13916066/speed-up-the-drawing-of-many-points-on-a-html5-canvas-element
  //http://bl.ocks.org/sumbera/11114288
  //https://github.com/Sumbera/gLayers.Leaflet
-
-var hurricane_break_colors = ['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa500', '#ff0000', '#ff00ff']
-var hurricane_breaks = [0, 34, 65, 84, 96, 114, 135]
 
 var canvas_settings = {
     data_xyz: []
@@ -677,7 +695,11 @@ function hurdat_event_canvas() {
     )
 }
 
-function hurdat_event_canvas_nocolor() {
+function hurdat_event_canvas_nocolor(showLegend) {
+    if (showLegend != false) {
+        showLegend = true
+    }
+
     $.getJSON("{{ url_for('map_hurricane_event_canvas_nocolor') }}", {},
         function (data) {
             canvas_settings.data_xyz = data.data
@@ -687,7 +709,9 @@ function hurdat_event_canvas_nocolor() {
             vals.sort(function(a, b){return a-b});
             canvas_settings.values_z = vals;
             layers['canvas'].needRedraw();
-            add_legend(canvas_settings.color_scheme.bins, canvas_settings.color_scheme.colors);
+            if (showLegend) {
+                add_legend(canvas_settings.color_scheme.bins, canvas_settings.color_scheme.colors);
+            }
         }
     )
 }
@@ -811,6 +835,9 @@ function apply_colors() {
     }
 }
 
+//DEP
+var hurricane_break_colors = ['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa500', '#ff0000', '#ff00ff']
+var hurricane_breaks = [0, 34, 65, 84, 96, 114, 135]
 function set_hurricane_colors(){
     canvas_settings.color_scheme.colors = hurricane_break_colors;
     canvas_settings.color_scheme.bins = hurricane_breaks;
@@ -1053,6 +1080,22 @@ function even_value_breaks(values, num_breaks){
     }
 
     return ret_breaks;
+}
+
+function colorSchemeBin_LowerBound(value) {
+    var bin = 0
+    for (pos = canvas_settings.color_scheme.bins.length; pos >= 0; --pos) {
+        if (value >= canvas_settings.color_scheme.bins[pos]) {
+            bin = pos;
+            break;
+        }
+    }
+    return c
+}
+
+function colorSchemeColor_LowerBound(value) {
+    var bin = colorSchemeBin_LowerBound(value)
+    return canvas_settings.color_scheme.colors[bin]
 }
 
 //Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
