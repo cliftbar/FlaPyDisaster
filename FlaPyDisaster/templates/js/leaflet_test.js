@@ -1153,6 +1153,26 @@ function colorSchemeColor_LowerBound(value) {
     return canvas_settings.color_scheme.colors[bin]
 }
 
+function updateColSplit() {
+    var value = document.getElementById('columnSplitSlider').value
+    var classMain = "col-md-6"
+    var classSide = "col-md-6"
+    if (value == 12) {
+        classMain = "col-md-12"
+        classSide = "hidden"
+    }else if (value == 0) {
+        classMain = "hidden"
+        classSide = "col-md-12"
+    } else {
+        var valueSide = 12 - value
+        classMain = "col-md-" + value
+        classSide = "col-md-" + valueSide
+    }
+
+    document.getElementById("mainbar").className = classMain
+    document.getElementById("sidebar").className = classSide
+}
+
 //Adapted from https://stackoverflow.com/questions/5623838/rgb-to-hex-and-hex-to-rgb
 function hexToRgb(hex) {
     hex = hex.replace('#', '');

@@ -34,7 +34,7 @@ def leaflet_mapping(sender_include='none'):
     named_color_schemes = genc.get_named_color_schemes_from_config()
     
     storm_name = gb.flapy_app.hurricane_catalog.current_storm.unique_name
-
+    storm_table = gb.flapy_app.hurricane_catalog.current_storm.to_model_dataframe().to_html(classes='track_table table-responsive', index=False)
     return fl.render_template('html/leaflet_mapping.html'
                               #, title="Mapping"
                               , sender_include=sender_include
@@ -42,6 +42,7 @@ def leaflet_mapping(sender_include='none'):
                               , user_color_num=user_color_num
                               , named_color_schemes=named_color_schemes
                               , event_name = storm_name
+                              , data = storm_table
                               , current_user=fl.session['username'] )
 
 

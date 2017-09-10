@@ -143,34 +143,18 @@
                     <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#displayModal">Display</button>
                     <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#drawModal">Draw</button>
                     <button type="button" onclick="clear_map()">Clear Map</button>
+                    <div id="slidecontainer">
+                        <input type="range" min="0" max="12" value="10" class="slider" id="columnSplitSlider" onchange="updateColSplit()">
+                    </div>
                 </div>
             </div>
         </div>
         <div class="row">
-            <div class="col-md-10"class="mainbar">
+            <div class="col-md-10" id="mainbar">
                 <div id="mapid" class="leaflet_map"></div>
             </div>
-            <div class="sidebar">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Column 1</th>
-                                <th>Column 2</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Cell 1</td>
-                                <td>Cell 2</td>
-                            </tr>
-                            <tr>
-                                <td>Cell 3</td>
-                                <td>Cell 4</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+            <div class="col-md-2" id="sidebar">
+                {{data | safe}}
             </div>
         </div>
         <script src="assets/js/jquery.min.js"></script>
