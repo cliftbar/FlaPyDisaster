@@ -222,10 +222,7 @@ class FlaPyApp:
     #     return fl.jsonify(result=pt_feature_dict['geojson'], max=10, min=2)
 
     def leaflet_get_color_array_from_config(self, form_dict):
-        hex_color_scheme = [[], []]
-        for i in range(int(form_dict['number_colors'])):
-            hex_color_scheme[0].append(form_dict['color_' + str(i)])
-            hex_color_scheme[1].append(form_dict['color_val_' + str(i)])
+        hex_color_scheme = self.hex_scheme_from_form(form_dict)
         ret_array = [genc.ColorPalettes.hex_to_rgb(hex_color_scheme[0], 255), hex_color_scheme[1]]
 
         if 'save_color_scheme' in form_dict.keys():
@@ -233,14 +230,23 @@ class FlaPyApp:
             print('Saving Color Scheme')
             if 'UserStyles' not in gb.GlobalConfig.sections():
                 gb.GlobalConfig.add_section('UserStyles')
-            gb.GlobalConfig.set('UserStyles', name, str(hex_color_scheme))
+            cnt = len(dict(gb.GlobalConfig.items('UserStyles')).keys())
+            gb.GlobalConfig.set('UserStyles', str(cnt) + "!" + name, str(hex_color_scheme))
             gb.save_config()
 
-        print("flapy_app")
+        print("got color scheme: " + form_dict['color_scheme_name'])
         print(hex_color_scheme)
         print(ret_array)
 
         return ret_array
+
+    def hex_scheme_from_form(self, form_dict):
+        hex_color_scheme = [[], []]
+        for i in range(int(form_dict['number_colors'])):
+            hex_color_scheme[0].append(form_dict['color_' + str(i)])
+            hex_color_scheme[1].append(form_dict['color_val_' + str(i)])
+        return hex_color_scheme
+
 
     # def leaflet_change_named_color_scheme(self, scheme_name):
     #     color_scheme = genc.gen_named_color_scheme_colors_from_config(scheme_name)

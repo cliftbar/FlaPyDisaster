@@ -142,7 +142,8 @@ def map_hurricane_event_canvas():
 
     sorted_values = list(map((lambda x: x[2]), storm.result_array))
     sorted_values.sort()
-    color_ramp = genc.ColorPalettes.hex_to_rgb(genc.ColorPalettes.simple_escalating_5, 255)
+    # color_ramp = genc.ColorPalettes.hex_to_rgb(genc.ColorPalettes.simple_escalating_5, 255)
+    color_ramp = genc.ColorPalettes.simple_escalating_5
     value_bins = genc.ColorPalettes.even_value_breaks(sorted_values, len(color_ramp))
 
     print("sending canvas events")

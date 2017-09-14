@@ -1,0 +1,172 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--bss includes-->
+    <link rel="stylesheet" href="/static/css/bssStyles.css">
+
+    <!--FlaPy Includes-->
+    <link rel="stylesheet" href="/static/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="/static/css/leaflet_map.css" />
+    <script type=text/javascript src="/static/leaflet/leaflet.js"></script>
+    <script type=text/javascript src="../static/leaflet/L.CanvasLayer.js"></script>
+    <script type=text/javascript src="{{ url_for('leaflet_test_js') }}"></script>
+    <script type=text/javascript>
+        var $SCRIPT_ROOT = {{ request.script_root|tojson | safe }};
+    </script>
+
+    <div id="leafletMappingBody">
+        <div class="modal fade" role="dialog" tabindex="-1" id="eventModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                        <h4 class="modal-title">Event Mapping Options</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form>
+                            <!--{% if sender_include != 'none' %}
+                                {% include 'html/' + sender_include + '.html' %}
+                            {% endif %}-->
+                            <div class="checkbox">
+                                <label>
+                                    <input id ="showEventFootprintCheckbox" type="checkbox">Show footprint
+                                </label>
+                            </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input id="showEventLegendCheckbox" type="checkbox">Show footprint legend
+                                </label>
+                            </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input id ="showEventTrackCheckbox" type="checkbox">Show track
+                                </label>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-default" type="button" data-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" type="button" onclick="eventModal()">Apply </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" role="dialog" tabindex="-1" id="displayModal">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Color Settings</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>Color settings for map drawings</p>
+                        <form name="bin_colors" id="bin_colors" action="set_colors()">
+                            <!--<select id="color_scheme_selector" name="color_scheme_selector" onchange="change_named_color_scheme()">-->
+                            <select id="color_scheme_selector" name="color_scheme_selector" onchange="get_named_color_scheme()">
+                                <!--<option value="<select a table>">&lt;Select A Table&gt;</option>-->
+                                {% for name in named_color_schemes %}
+                                <option value="{{ name }}">{{ name.split('!', maxsplit=1)[1] }}</option>
+                                {% endfor %}
+                            </select>
+                            <select id="color_bin_source" name="color_bin_source">
+                                <option value="scheme">From Scheme</option>
+                                <option value="even">Even Breaks</option>
+                            </select>
+                            <label for="color_bin_source">Color Bin Type</label>
+                            <div>
+                                <input id="number_colors" name="number_colors" type="hidden" value="5">
+                                <button type="button" onclick="add_color()">Add Color</button>
+                                <button type="button" onclick="remove_color()">Remove Color</button>
+                            </div>
+                            <div>
+                                <button type="button" onclick="set_colors()" class="btn btn-default" data-dismiss="modal" disabled>Set Color Scheme (dep)</button>
+                            </div>
+                            <br />
+                            <div>
+                                <input type="text" name="color_scheme_name" id="color_scheme_name" value="user_default_{{ user_color_num }}" disabled>
+                                <input type="checkbox" name="save_color_scheme" id="save_color_scheme" value="1">
+                                <label style="display:inline" for="save_color_scheme">Save Color Scheme</label>
+                            </div>
+                            <div>
+                                <input type="number" id="opacity_value" name="opacity_value" max="100" min="0" step="1" onchange="set_opacity()" value=20>
+                                <label style="display:inline" for="opacity_value">Opacity (%)</label>
+                            </div>
+                            <div id="color_selectors">
+                                {% for color in default_colors[0] %}
+                                <div id="div_color_{{ loop.index0 }}">
+                                    <input type="color" name="color_{{ loop.index0 }}" id="color_{{ loop.index0 }}" value="{{ default_colors[0][loop.index0] }}">
+                                    <input type="number" name="color_val_{{ loop.index0 }}" id="color_val_{{ loop.index0 }}" value="{{ default_colors[1][loop.index0] }}">
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" onclick="save_color_scheme()">Save Scheme</button>
+                        <button type="button" class="btn btn-default" onclick="apply_colors()">Apply Scheme</button>
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        <div class="modal fade" role="dialog" tabindex="-1" id="drawModal">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                        <h4 class="modal-title">Modal Title</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>The content of your modal.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-default" type="button" data-dismiss="modal">Close</button>
+                        <button class="btn btn-primary" type="button">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    {% if title %}
+                        <h1>{{ event_name }}</h1>
+                    {% else %}
+                        <h1>FlaPy Disaster</h1>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#eventModal">Event</button>
+                    <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#displayModal">Display</button>
+                    <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#drawModal">Draw</button>
+                    <button type="button" onclick="clear_map()">Clear Map</button>
+                    <div id="slidecontainer">
+                        <input type="range" min="0" max="12" value="10" class="slider" id="columnSplitSlider" onchange="updateColSplit()">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-10" id="mainbar">
+                <div id="mapid" class="leaflet_map"></div>
+            </div>
+            <div class="col-md-2" id="sidebar">
+                {{data | safe}}
+            </div>
+        </div>
+        <script src="assets/js/jquery.min.js"></script>
+        <script src="assets/bootstrap/js/bootstrap.min.js"></script>
+        <script src="assets/js/untitled.js"></script>
+    </div>
+    <script>
+        leaflet_init();
+        //$("#displayModal").modal("show")
+        //$("#displayModal").modal("hide")
+        $('#save_color_scheme').change(function () {
+            $('#color_scheme_name').attr('disabled', !this.checked);
+        });
+    </script>
+{% endblock  %}

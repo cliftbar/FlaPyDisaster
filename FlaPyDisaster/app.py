@@ -42,8 +42,8 @@ if __name__ == '__main__':
     gdm.hello()
     local_only = GlobalConfig.getboolean('ApplicationConfig', 'local_access_only')
     if local_only:
-        app.run(HOST, PORT)
+        app.run(HOST, PORT, threaded=True)
     else:
         accept_remote_connection = "0.0.0.0"
-        app.run(accept_remote_connection, PORT)
+        app.run(accept_remote_connection, PORT, threaded=True)
 

@@ -509,6 +509,7 @@ class HurdatCatalog:
             r64_nw_nmi = int(data_row[19])
             if r64_nw_nmi == self.hurdat_no_data:
                 r64_nw_nmi = math.nan
+                
             # create and store track point
             self.track_points.append(
                 self.HurdatTrackPoint(year, month, day, hour, minute, lat_y, lon_x, max_wind_kts, min_pressure_mb, sequence, self.fspeed_kts
@@ -613,7 +614,7 @@ class HurdatCatalog:
 
             min_cp, row = row.split(maxsplit=1)
             if min_cp == '-':
-                min_cp = None
+                min_cp = math.nan
             else:
                 min_cp = float(min_cp.strip())
             row = row.strip()
@@ -736,10 +737,13 @@ class HurdatCatalog:
             geojson_collection = list(map((lambda x: lm.create_feature(x[0], lm.GeojsonGeometry.point, x[1])['geojson']), temp_list))
             return geojson_collection
 
+        def track_to_json(self):
+            return list(map((lambda x: {"catalogNumber": self.catalog_number, "stormName": self.name, "basin": self.basin, "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"), "eyeLat_y": x.point_lat_lon()[0], "eyeLon_x": x.point_lat_lon()[1], "maxWind_kts": None if math.isnan(x.max_wind_kts) else x.max_wind_kts, "minCp_mb": None if math.isnan(x.min_pressure_mb) else x.min_pressure_mb, "sequence": x.sequence, "fSpeed_kts": x.fspeed_kts, "isLandfallPoint": bool(x.is_landfall), "rMax_nmi": self.rmax_nmi, "gwaf": self.gwaf, "heading": x.heading_to_next_point}), self.track_points))
+
         def calculate_grid_scala(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
             # Send event to scala
             formData = {}
-            formData = list(map((lambda x: {"catalogNumber": self.catalog_number, "stormName": self.name, "basin": self.basin, "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"), "eyeLat_y": x.point_lat_lon()[0], "eyeLon_x": x.point_lat_lon()[1], "maxWind_kts": x.max_wind_kts, "minCp_mb": x.min_pressure_mb, "sequence": x.sequence, "fSpeed_kts": x.fspeed_kts, "isLandfallPoint": bool(x.is_landfall), "rMax_nmi": self.rmax_nmi, "gwaf": self.gwaf, "heading": x.heading_to_next_point}), self.track_points))
+            formData = self.track_to_json()
 
             formDict = {"track": formData}
             formDict['BBox'] = {}
@@ -756,8 +760,8 @@ class HurdatCatalog:
             formDict['maxDist'] = self.max_calc_dist
 
             # send request
-            r = requests.post("http://localhost:9000/hurTest", json = formDict)
-
+            r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
+            
             # Build event data from scala image file, as a byproduct saves the event to disk completely
             self.raster_bands = 4
             self.raster_output_band = 1
