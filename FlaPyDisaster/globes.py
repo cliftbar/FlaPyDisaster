@@ -29,6 +29,15 @@ def global_init():
     GlobalConfig = cpar.ConfigParser()
     GlobalConfig.read(GlobalConfigFileUri)
 
+    global UPLOAD_FOLDER
+    UPLOAD_FOLDER = r'tmp/'
+
+    global STATIC_FOLDER
+    STATIC_FOLDER = r'static/'
+
+    global USER_FOLDER
+    USER_FOLDER = r'users/'
+
 def save_config(config=None, file_uri=None, overwrite=False):
     """
     Save the config file
