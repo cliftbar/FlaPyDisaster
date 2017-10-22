@@ -49,8 +49,6 @@ def leaflet_mapping(sender_include='none'):
                               , data = storm_table
                               , current_user=fl.session['username'] )
 
-
-
 @app.route('/leaflet/test_latlng', methods=['POST'])
 def leaflet_test_latlng():
     lat = fl.request.json['lat']

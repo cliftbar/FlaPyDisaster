@@ -30,8 +30,8 @@
             <option value="ft">Feet</option>
         </select>
     </div>
-    <script src="../static/scripts/unit_conversions.js"></script>
-    <script src="../static/scripts/inits.js"></script>
+    <script src="{{ url_for('static', filename='js/unit_conversions.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/inits.js') }}"></script>
     <script type=text/javascript>
         var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
     </script>
