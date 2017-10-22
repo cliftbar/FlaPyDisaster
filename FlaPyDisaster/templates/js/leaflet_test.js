@@ -172,7 +172,12 @@ function leaflet_init() {
  * Add event handlers for map
  */
 function add_handlers() {
-    // mymap.on('click', onMapClick);
+    $('#eventTable').find('tr').click(function () {
+        var seq = $(this).find('td:eq(8)').text();
+        console.log('You clicked point sequence ' + seq);
+        hurricane_geojson_clicked_on_point(seq)
+        hurricane_table_row_clicked(this)
+    });
 }
 
 /*
@@ -568,6 +573,19 @@ function hurricane_track_to_geojson_schemed() {
                 var pointsLayer = L.geoJson([], {
                     pointToLayer: function (feature, latlng) {
                         return L.circleMarker(latlng, geojsonSettings.makeStyle(feature.properties.value));
+                    },
+                    onEachFeature: function (feature, layer) {
+                        layer.on({
+                            click: function () {
+                                var seq = feature.properties.sequence
+                                console.log('You clicked point sequence ' + seq);
+                                hurricane_geojson_clicked_on_point(seq)
+                                var tableRow = $('#eventTable tr').filter(function () {
+                                    return $.trim($('td', this).eq(8).text()) == seq;
+                                })[0];
+                                hurricane_table_row_clicked(tableRow)
+                            }
+                        })
                     }
                 }).addTo(mymap);
                 layers['hurricaneTrack_geojson'] = pointsLayer;
@@ -576,6 +594,26 @@ function hurricane_track_to_geojson_schemed() {
             setGeoJsonData()
         }
     )
+}
+
+function hurricane_geojson_clicked_on_point(seq) {
+    if (!layers.hasOwnProperty('hurricaneTrack_geojson')) {
+        return
+    }
+    layers['hurricaneTrack_geojson'].eachLayer(function (layer) {
+        if (layer.feature.properties.sequence == seq) {
+            layer.setStyle({ radius: 16 })
+        } else {
+            layer.setStyle({ radius: geoJsonStyleValues.radius })
+        }
+    });
+}
+
+function hurricane_table_row_clicked(row) {
+    $('#eventTable').find('tr.info').removeClass("info")
+    row.classList.add("info")
+    var topPos = row.offsetTop;
+    document.getElementById('tableScrollingDiv').scrollTop = topPos;
 }
 
 function hurricane_event_to_geojson() {
@@ -650,6 +688,7 @@ function eventModal() {
     if (layers.hasOwnProperty('hurricaneTrack_geojson')) {
         clear_layer("hurricaneTrack_geojson")
     }
+
     if (document.getElementById("showEventFootprintCheckbox").checked) {
         showLegend = document.getElementById("showEventLegendCheckbox").checked
         hurdat_event_canvas_nocolor()
@@ -657,6 +696,12 @@ function eventModal() {
     
     if (document.getElementById("showEventTrackCheckbox").checked) {
         hurricane_track_to_geojson_schemed()
+    }
+
+    if (document.getElementById("showEventTableCheckbox").checked) {
+        document.getElementById("eventTable").classList.remove("hidden")
+    } else {
+        document.getElementById("eventTable").classList.add("hidden")
     }
 }
 

@@ -224,7 +224,8 @@ class HurdatCatalog:
                 lon = self.lon_x * -1 if self.hemisphere_ew == 'W' else self.lon_x
                 lat = self.lat_y * -1 if self.hemisphere_ns == 'S' else self.lat_y
                 val = self.max_wind_kts
-                return [[lon, lat], val]
+                seq = self.sequence
+                return [[lon, lat], val, seq]
 
             def to_hurdat_list(self):
                 """
@@ -524,6 +525,8 @@ class HurdatCatalog:
             lon_x = row[5]
             max_wind = row[6]
             min_cp = row[7]
+            if (min_cp == None or min_cp == ''):
+                min_cp = math.nan
             seq = row[8]
             fspeed = row[9]
             is_landfall = row[10]
@@ -609,10 +612,10 @@ class HurdatCatalog:
             timestamp = datetime.datetime.strptime(str(year) + "/" + ts[:-1], "%Y/%m/%d/%H")
 
             max_wind, row = row.split(maxsplit=1)
-            max_wind = float(max_wind.strip())
+            max_wind = float(max_wind.strip()) if max_wind.strip().isdigit() else 0
             row = row.strip()
 
-            min_cp, row = row.split(maxsplit=1)
+            min_cp, row = row.split(maxsplit=1) 
             if min_cp == '-':
                 min_cp = math.nan
             else:
@@ -734,7 +737,7 @@ class HurdatCatalog:
             :return: list of geojson points
             """
             temp_list = list(map((lambda x: x.for_geojson_point()), self.track_points))
-            geojson_collection = list(map((lambda x: lm.create_feature(x[0], lm.GeojsonGeometry.point, x[1])['geojson']), temp_list))
+            geojson_collection = list(map((lambda x: lm.create_feature(x[0], lm.GeojsonGeometry.point, x[1], props = {"sequence": x[2]})['geojson']), temp_list))
             return geojson_collection
 
         def track_to_json(self):

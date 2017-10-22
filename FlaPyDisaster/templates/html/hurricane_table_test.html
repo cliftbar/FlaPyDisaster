@@ -120,7 +120,6 @@
         var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
     </script>
     <script>
-        <!--To make the modals behave properly, for some reason without this elements are clickable when hidden-->
         $("#calculation_settings_modal").modal("show")
         $("#event_settings_modal").modal("show")
 

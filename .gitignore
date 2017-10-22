@@ -269,3 +269,6 @@ ModelManifest.xml
 
 /FlaPyDisaster/hurricane/__pycache__
 /FlaPyDisaster/test_out.txt
+
+# Visual Studio Code
+.vscode/

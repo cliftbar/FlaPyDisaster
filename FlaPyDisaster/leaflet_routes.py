@@ -5,6 +5,7 @@ import general.general_colors as genc
 import geojson
 import mapping.leaflet_map as lm
 import json
+import pandas as pd
 
 
 @app.route('/leaflet')
@@ -34,7 +35,9 @@ def leaflet_mapping(sender_include='none'):
     named_color_schemes = genc.get_named_color_schemes_from_config()
     
     storm_name = gb.flapy_app.hurricane_catalog.current_storm.unique_name
-    storm_table = gb.flapy_app.hurricane_catalog.current_storm.to_model_dataframe().to_html(classes='track_table table-responsive', index=False)
+    storm_df = gb.flapy_app.hurricane_catalog.current_storm.to_model_dataframe()
+    # storm_cols = pd.DataFrame(list([storm_df.columns.values])).to_html(classes="track_table_header", index=False, header=False)
+    storm_table = storm_df.to_html(classes='track_table table table-responsive table-hover" id="eventTable', index=False)
     return fl.render_template('html/leaflet_mapping.html'
                               #, title="Mapping"
                               , sender_include=sender_include
@@ -42,6 +45,7 @@ def leaflet_mapping(sender_include='none'):
                               , user_color_num=user_color_num
                               , named_color_schemes=named_color_schemes
                               , event_name = storm_name
+                              # , headers = storm_cols
                               , data = storm_table
                               , current_user=fl.session['username'] )
 

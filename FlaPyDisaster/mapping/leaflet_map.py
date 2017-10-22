@@ -33,7 +33,7 @@ class GeojsonGeometry:
         return [self.point, self.multipoint, self.line, self.multiline, self.polygon, self.multipolygon, self.geo_feature, self.geo_featurecollection]
 
 
-def create_feature(geometry, geo_type, val, feature_id=None, color=(255, 0, 0), weight=10, opacity=1.0):
+def create_feature(geometry, geo_type, val, feature_id=None, color=(255, 0, 0), weight=10, opacity=1.0, props={}):
     """
     :param geometry: Geometry structure that creates geojson string.  Options are:
                      Point: (lng, lat) as tuple
@@ -75,7 +75,8 @@ def create_feature(geometry, geo_type, val, feature_id=None, color=(255, 0, 0), 
         return
 
     style = None  # leaflet_style_creator()
-    geo = geojson.Feature(id=feature_id, geometry=geo, properties={"value": val})
+    props['value'] = val
+    geo = geojson.Feature(id=feature_id, geometry=geo, properties=props)
 
     ret = {'geojson': geo, 'style': style}
 

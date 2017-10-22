@@ -43,6 +43,11 @@
                                     <input id ="showEventTrackCheckbox" type="checkbox">Show track
                                 </label>
                             </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input id="showEventTableCheckbox" type="checkbox" checked>Show data table
+                                </label>
+                            </div>
                         </form>
                     </div>
                     <div class="modal-footer">
@@ -129,37 +134,37 @@
                 </div>
             </div>
         </div>
-        <div class="container">
-            <div class="row">
-                <div class="col-md-6">
-                    {% if title %}
-                        <h1>{{ event_name }}</h1>
-                    {% else %}
-                        <h1>FlaPy Disaster</h1>
-                    {% endif %}
-                </div>
-                <div class="col-md-6">
-                    <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#eventModal">Event</button>
-                    <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#displayModal">Display</button>
-                    <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#drawModal">Draw</button>
-                    <button type="button" onclick="clear_map()">Clear Map</button>
-                    <div id="slidecontainer">
-                        <input type="range" min="0" max="12" value="10" class="slider" id="columnSplitSlider" onchange="updateColSplit()">
-                    </div>
-                </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                {% if event_name %}
+                    <h1>{{ event_name }}</h1>
+                {% else %}
+                    <h1>FlaPy Disaster</h1>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#eventModal">Event</button>
+                <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#displayModal">Display</button>
+                <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#drawModal">Draw</button>
+                <button type="button" onclick="clear_map()">Clear Map</button>
             </div>
         </div>
+
         <div class="row">
+            <div id="slidecontainer">
+                <input type="range" min="0" max="12" value="10" class="slider" id="columnSplitSlider" onchange="updateColSplit()">
+            </div>
             <div class="col-md-10" id="mainbar">
                 <div id="mapid" class="leaflet_map"></div>
             </div>
             <div class="col-md-2" id="sidebar">
-                {{data | safe}}
+                <h2>Event Table</h2>
+                <div id="tableScrollingDiv" style="height: 70vh; overflow: scroll;">
+                    {{data | safe}}
+                </div>
             </div>
         </div>
-        <script src="assets/js/jquery.min.js"></script>
-        <script src="assets/bootstrap/js/bootstrap.min.js"></script>
-        <script src="assets/js/untitled.js"></script>
     </div>
     <script>
         leaflet_init();
