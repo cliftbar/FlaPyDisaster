@@ -61,6 +61,7 @@ https://conda.anaconda.org/conda-forge/win-64/python-3.5.3-1.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/python-dateutil-2.6.0-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/pytz-2016.10-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/qt-5.6.2-vc14_1.tar.bz2
+https://conda.anaconda.org/conda-forge/win-64/requests-2.13.0-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/rtree-0.8.3-py35_0.tar.bz2
 https://repo.continuum.io/pkgs/free/win-64/scipy-0.19.0-np111py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/setuptools-33.1.1-py35_0.tar.bz2
