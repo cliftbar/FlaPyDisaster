@@ -23,6 +23,9 @@ from routes import *
 from globes import *
 global_init()
 
+import FlaPyPlusPlus
+print("Cuda hello: " + str(FlaPyPlusPlus.cpp_hello()))
+
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 wsgi_app = app.wsgi_app
 
