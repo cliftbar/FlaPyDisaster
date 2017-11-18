@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
     <head>
@@ -10,11 +10,11 @@
 
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href="/static/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
-        <script type=text/javascript src="/static/JQuery/jquery-3.0.0.js"></script>
-        <script src="/static/bootstrap/js/bootstrap.js"></script>
+        <link href="{{ url_for('static', filename='bootstrap/css/bootstrap.min.css') }}" rel="stylesheet" media="screen">
+        <script type=text/javascript src="{{ url_for('static', filename='JQuery/jquery-3.0.0.js') }}"></script>
+        <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.js') }}"></script>
         <script src="{{ url_for('get_base_js') }}"></script>
-        <link rel="stylesheet" href="/static/css/base.css">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     </head>
     <body>
         <div class="nav">
@@ -30,7 +30,8 @@
                 <li><a href="{{ url_for('hurricane_page') }}">Hurricane</a></li>
                 <li><a href="{{ url_for('leaflet_redirect', sender_include='none') }}">Leaflet</a></li>
                 <li><a href="{{ url_for('asteroid_page') }}">Asteroid</a></li>
-                <li><a href="{{ url_for('documentation_main') }}">Documentation</a></li>
+                <!--<li><a href="{{ url_for('documentation_main') }}">Documentation</a></li>-->
+                <li><a href="https://github.com/cliftbar/FlaPyDisaster/wiki">Documentation</a></li>
 
                 <li class="nav_right">
                     <!-- Trigger the modal with a button -->

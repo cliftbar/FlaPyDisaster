@@ -11,10 +11,8 @@ import configparser as cpar
 import numpy as np
 import mapping.gdal_mapping as gdm
 import requests
-# from app import app
 import shutil
 import globes as gb
-from app import app
 
 
 
@@ -768,7 +766,7 @@ class HurdatCatalog:
             # Build event data from scala image file, as a byproduct saves the event to disk completely
             self.raster_bands = 4
             self.raster_output_band = 1
-            base_uri = app.config.get('USER_FOLDER')
+            base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
             base_uri += r'events/hurricane/'
             base_name = self.unique_name
             
@@ -903,7 +901,7 @@ class HurdatCatalog:
                 base_name += "_" + event_suffix
             self.unique_name = base_name
             raster_uri = base_uri + base_name + ".png"
-            static_image_file_uri = r'static/images/' + base_name + ".png"
+            static_image_file_uri = gb.STATIC_FOLDER + r'images/' + base_name + ".png"
 
             self.save_event_raster(raster_uri, raster_bands, raster_output_band)
 

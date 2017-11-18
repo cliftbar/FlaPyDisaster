@@ -8,20 +8,22 @@ import ast
 
 
 app = Flask(__name__)
-UPLOAD_FOLDER = r'tmp/'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-STATIC_FOLDER = r'static/'
-app.config['STATIC_FOLDER'] = STATIC_FOLDER
-
-app.config['USER_FOLDER'] = r'users/'
-app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
 # routes.py after app is created, circular references
 # noinspection PyPep8
 from routes import *
 # noinspection PyPep8
-from globes import *
-global_init()
+import globes as gb
+gb.global_init()
+
+# App settings
+
+app.config['UPLOAD_FOLDER'] = gb.UPLOAD_FOLDER
+
+app.config['STATIC_FOLDER'] = gb.STATIC_FOLDER
+
+app.config['USER_FOLDER'] = gb.USER_FOLDER
+app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
 # Make the WSGI interface available at the top level so wfastcgi can get it.
 wsgi_app = app.wsgi_app
