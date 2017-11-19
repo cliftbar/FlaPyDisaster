@@ -1,0 +1,24 @@
+FROM flapyenv
+
+SHELL ["/bin/bash", "-c"]
+
+# RUN apt-get update
+# RUN apt-get install -y git
+
+# USER flapydisaster
+# 
+# RUN mkdir /home/flapydisaster/FlaPySrc
+# WORKDIR /home/flapydisaster/FlaPySrc
+
+RUN mkdir /FlaPySrc
+WORKDIR /FlaPySrc
+
+RUN git clone --depth 1 https://github.com/cliftbar/FlaPyDisaster.git
+
+COPY user_config.ini FlaPyDisaster/FlaPyDisaster/users/user_config/user_config.ini
+RUN chmod -R 777 /FlaPySrc
+EXPOSE 5555
+
+# ENTRYPOINT [ "source activate FlaPyEnv && python FlaPyDisaster/FlaPyDisaster/app.py" ]
+
+CMD [ "/opt/conda/envs/FlaPyEnv/bin/python FlaPyDisaster/FlaPyDisaster/app.py" ]
