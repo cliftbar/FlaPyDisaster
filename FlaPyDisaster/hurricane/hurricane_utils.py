@@ -13,6 +13,8 @@ import mapping.gdal_mapping as gdm
 import requests
 import shutil
 import globes as gb
+from PIL import Image
+from io import BytesIO
 
 
 
@@ -365,6 +367,7 @@ class HurdatCatalog:
 
             file_paths_configuration = 'FilePathConfiguration'
             data_uri = config_file.get(file_paths_configuration, 'data_path')
+            self.track_points = []
             self.parse_model_data(data_uri, True)
 
         def calc_trackpoint_heading(self):
@@ -555,6 +558,7 @@ class HurdatCatalog:
             for line in self.storm_data:
                 self.parse_model_data_row(line)
             self.track_point_count = len(self.track_points)
+            self.calc_trackpoint_heading()
             pass
 
         def parse_unisys_data(self, unisys_file_uri):
@@ -763,6 +767,8 @@ class HurdatCatalog:
             # send request
             r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
             
+            footprintImage = Image.open(BytesIO(r.content))
+
             # Build event data from scala image file, as a byproduct saves the event to disk completely
             self.raster_bands = 4
             self.raster_output_band = 1
@@ -770,8 +776,8 @@ class HurdatCatalog:
             base_uri += r'events/hurricane/'
             base_name = self.unique_name
             
-            base_name += "_" + "scala_temp"
-            self.unique_name = base_name
+            # save_name += "_" + "scala_temp"
+            #self.unique_name = base_name
 
             raster_uri = base_uri + base_name + ".png"
 
@@ -780,13 +786,14 @@ class HurdatCatalog:
             self.save_base_data(base_uri, base_name)
 
             # copy image from scala land to python land.  Assumes running on the same server with acess to both server directories
-            shutil.copy2(r.json()['imageUri'], raster_uri)
+            # shutil.copy2(r.json()['imageUri'], raster_uri)
+            footprintImage.save(raster_uri)
 
             # set current event what's read from 
             self.parse_from_saved_event(ini_uri)
 
             print(r.status_code)
-            print(r.json()['imageUri'])
+            # print(r.json()['imageUri'])
 
         def calculate_grid_python(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
             """
