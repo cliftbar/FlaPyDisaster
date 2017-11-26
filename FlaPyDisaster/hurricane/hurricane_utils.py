@@ -746,6 +746,7 @@ class HurdatCatalog:
             return list(map((lambda x: {"catalogNumber": self.catalog_number, "stormName": self.name, "basin": self.basin, "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"), "eyeLat_y": x.point_lat_lon()[0], "eyeLon_x": x.point_lat_lon()[1], "maxWind_kts": None if math.isnan(x.max_wind_kts) else x.max_wind_kts, "minCp_mb": None if math.isnan(x.min_pressure_mb) else x.min_pressure_mb, "sequence": x.sequence, "fSpeed_kts": x.fspeed_kts, "isLandfallPoint": bool(x.is_landfall), "rMax_nmi": self.rmax_nmi, "gwaf": self.gwaf, "heading": x.heading_to_next_point}), self.track_points))
 
         def calculate_grid_scala(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
+            calc_method = 'nws23'
             # Send event to scala
             formData = {}
             formData = self.track_to_json()
@@ -763,9 +764,15 @@ class HurdatCatalog:
             formDict['fspeed'] = None if auto_fspeed else gb.flapy_app.hurricane_catalog.current_storm.fspeed_kts
             formDict['par'] = num_parallel if do_parallel else -1
             formDict['maxDist'] = self.max_calc_dist
+            formDict['call_id'] = self.unique_name
 
             # send request
-            r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
+            host = gb.GlobalConfig.get('ScalaServer', 'host')
+            port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+            scala_url = "http://{0}:{1}/calculate/hurricane/{2}".format(host, port, calc_method)
+            # r = requests.get("http://192.168.88.28:9001/calculate/hurricane/nws23", json = formDict)
+            # r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
+            r = requests.get(scala_url, json = formDict)
             
             footprintImage = Image.open(BytesIO(r.content))
 

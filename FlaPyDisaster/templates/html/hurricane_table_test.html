@@ -14,6 +14,11 @@
 
         <button id="calc_event_grid" type="button" onclick="change_table('table_selector', 'track_table', 1)">Calculate Event Grid</button>
         <button id="calc_event_grid" type="button" onclick="change_table('table_selector', 'track_table', 2)">Scala Test Button</button>
+        <button id="scala_set_params" type="button" onclick="set_scala_settings()">Set Scala Params</button>
+        <form id="scala_settings" name="scala_settings">
+            <input name="address" type="url" value="{{ scala_address }}"/>
+            <input name="worker_count" type="number" value="{{ scala_worker_count }}" />
+        </form>
 
         <div id="event_has_calc_indicator" class="indicator status_bad"></div>
 

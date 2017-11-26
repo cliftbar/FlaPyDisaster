@@ -74,6 +74,19 @@ function set_calculation_settings(){
      );
 }
 
+function set_scala_settings() {
+    $.ajax({
+        type: "POST",
+        url: "{{ url_for('hurricane_set_scala_settings') }}",
+        data: $("#scala_settings").serialize(),
+        success: function (data) {
+            console.log(data)
+        }
+    }
+    );
+}
+
+
 $('#automatic_fspeed').change(function() {
     $('#fspeed_kts_input').attr('disabled',this.checked)
 });
