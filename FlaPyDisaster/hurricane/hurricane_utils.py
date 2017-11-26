@@ -15,7 +15,8 @@ import shutil
 import globes as gb
 from PIL import Image
 from io import BytesIO
-
+import asyncio
+import aiohttp
 
 
 def calc_bearing_north_zero(lat_ref, lon_ref, lat_loc, lon_loc):
@@ -1081,4 +1082,66 @@ class HurdatCatalog:
         curr_storm.parse_unisys_data(unisys_file_uri)
         self.storm_catalog.append(curr_storm)
         print(curr_storm.unique_name)
+
+    async def scala_catalog_calculate_storm(self, storm, sem, session, url):
+        calc_method = 'nws23'
+        # Send event to scala
+        formData = {}
+        formData = storm.track_to_json()
+
+        formDict = {"track": formData}
+        formDict['BBox'] = {}
+        formDict['BBox']['topLatY'] = storm.lat_lon_grid.top_lat_y
+        formDict['BBox']['botLatY'] = storm.lat_lon_grid.bot_lat_y
+        formDict['BBox']['leftLonX'] = storm.lat_lon_grid.left_lon_x
+        formDict['BBox']['rightLonX'] = storm.lat_lon_grid.right_lon_x
+        formDict['BBox']['pxPerDegreeX'] = storm.lat_lon_grid.block_per_degree_x
+        formDict['BBox']['pxPerDegreeY'] = storm.lat_lon_grid.block_per_degree_y
+
+        formDict['rmax'] = storm.rmax_nmi
+        formDict['fspeed'] = None if auto_fspeed else storm.fspeed_kts
+        formDict['par'] = num_parallel if do_parallel else -1
+        formDict['maxDist'] = storm.max_calc_dist
+        formDict['call_id'] = storm.unique_name
+
+        # send request
+        r = requests.get(url, json = formDict)
+        resContent = None
+        async with sem:
+            async with session.get(url, json = formDict) as r:
+                call_id = r.headers['call_id']
+                resContent = await r.content
+        
+        # get image returned from scala request
+        footprintImage = Image.open(BytesIO(resContent))
+
+        # Build event data from scala image file, as a byproduct saves the event to disk completely
+        storm.raster_bands = 4
+        storm.raster_output_band = 1
+        base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
+        base_uri += r'events/hurricane/'
+        base_name = storm.unique_name
+
+        raster_uri = base_uri + base_name + ".png"
+
+        ini_uri = storm.save_event_ini(base_uri, base_name)
+
+        storm.save_base_data(base_uri, base_name)
+
+        # Save image from scala request
+        footprintImage.save(raster_uri)
+
+        # set current event to what's read from 
+        storm.parse_from_saved_event(ini_uri)
+
+        print("Storm: {0}, Status Code: {1}".format(storm.unique_name, r.status_code))
+
+    def scala_catalog_calculate():
+        host = gb.GlobalConfig.get('ScalaServer', 'host')
+        port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+        scala_url = "http://{0}:{1}/calculate/hurricane/{2}".format(host, port, calc_method)
+
+        sem = asyncio.Semaphore(2)
+        loop = asyncio.get_event_loop()
+        number = len(self.sotrm_catalog)
     pass

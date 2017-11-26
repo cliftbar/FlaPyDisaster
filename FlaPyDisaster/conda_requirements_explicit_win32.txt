@@ -2,9 +2,12 @@
 # $ conda create --name <env> --file <this file>
 # platform: win-64
 @EXPLICIT
+https://repo.continuum.io/pkgs/free/win-64/aiohttp-2.1.0-py35_0.tar.bz2
+https://repo.continuum.io/pkgs/free/win-64/async-timeout-1.2.1-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/bzip2-1.0.6-vc14_1.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/ca-certificates-2017.1.23-0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/certifi-2017.1.23-py35_0.tar.bz2
+https://repo.continuum.io/pkgs/free/win-64/chardet-3.0.4-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/click-6.7-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/click-plugins-1.0.3-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/cligj-0.4.0-py35_0.tar.bz2
@@ -41,6 +44,7 @@ https://repo.continuum.io/pkgs/free/win-64/markdown2-2.3.3-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/markupsafe-0.23-py35_1.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/matplotlib-2.0.0-np111py35_3.tar.bz2
 https://repo.continuum.io/pkgs/free/win-64/mkl-2017.0.1-0.tar.bz2
+https://repo.continuum.io/pkgs/free/win-64/multidict-2.1.6-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/munch-2.1.1-py35_0.tar.bz2
 https://repo.continuum.io/pkgs/free/win-64/numba-0.31.0-np111py35_0.tar.bz2
 https://repo.continuum.io/pkgs/free/win-64/numpy-1.11.3-py35_0.tar.bz2
@@ -61,7 +65,7 @@ https://conda.anaconda.org/conda-forge/win-64/python-3.5.3-1.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/python-dateutil-2.6.0-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/pytz-2016.10-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/qt-5.6.2-vc14_1.tar.bz2
-https://conda.anaconda.org/conda-forge/win-64/requests-2.13.0-py35_0.tar.bz2
+https://repo.continuum.io/pkgs/free/win-64/requests-2.14.2-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/rtree-0.8.3-py35_0.tar.bz2
 https://repo.continuum.io/pkgs/free/win-64/scipy-0.19.0-np111py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/setuptools-33.1.1-py35_0.tar.bz2
@@ -77,4 +81,5 @@ https://conda.anaconda.org/conda-forge/win-64/werkzeug-0.11.10-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/wheel-0.29.0-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/wincertstore-0.2-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/xerces-c-3.1.4-vc14_2.tar.bz2
+https://repo.continuum.io/pkgs/free/win-64/yarl-0.10.3-py35_0.tar.bz2
 https://conda.anaconda.org/conda-forge/win-64/zlib-1.2.11-vc14_0.tar.bz2

@@ -1,0 +1,5 @@
+StormID/Date, Name/Hour, Rows/SpecialRow, System Status, Lat, Lon, Max Wind (kts), Min Pressure (mBar), R34 NE(Nauts; kts), R34 SE (Nauts; kts), R34 SW (Nauts; kts), R34 NW (Nauts; kts), R50 NE (Nauts; kts), R50 SE (Nauts; kts), R50 SW (Nauts; kts), R50 NW (Nauts; kts), R64 NE (Nauts; kts), R64 SE (Nauts; kts), R64 SW (Nauts; kts), R64 NW (Nauts; kts),
+AL021851,            UNNAMED,      1,
+18510705, 1200,  , HU, 22.2N,  97.6W,  80, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999,
+AL031851,            UNNAMED,      1,
+18510710, 1200,  , TS, 12.0N,  60.0W,  50, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999, -999,
