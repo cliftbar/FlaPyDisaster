@@ -1084,6 +1084,9 @@ class HurdatCatalog:
         print(curr_storm.unique_name)
 
     async def scala_catalog_calculate_storm(self, storm, sem, session, url):
+        auto_fspeed = False
+        do_parallel = False
+
         calc_method = 'nws23'
         # Send event to scala
         formData = {}
@@ -1104,44 +1107,83 @@ class HurdatCatalog:
         formDict['maxDist'] = storm.max_calc_dist
         formDict['call_id'] = storm.unique_name
 
+        respImage = None
         # send request
-        r = requests.get(url, json = formDict)
-        resContent = None
+        # r = requests.get(url, json = formDict)
         async with sem:
             async with session.get(url, json = formDict) as r:
-                call_id = r.headers['call_id']
-                resContent = await r.content
+                if r.status == 200:
+                    respImage = await r.read()
+                    call_id = r.headers['call_id']
+                    server_id = r.headers['server_id']
+                
+                    print("request id: {0}, response id: {1}, server id: {2}".format(storm.unique_name, call_id, server_id))
         
-        # get image returned from scala request
-        footprintImage = Image.open(BytesIO(resContent))
+                    # get image returned from scala request
+                    footprintImage = Image.open(BytesIO(respImage))
 
-        # Build event data from scala image file, as a byproduct saves the event to disk completely
-        storm.raster_bands = 4
-        storm.raster_output_band = 1
-        base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
-        base_uri += r'events/hurricane/'
-        base_name = storm.unique_name
+                    # Build event data from scala image file, as a byproduct saves the event to disk completely
+                    storm.raster_bands = 4
+                    storm.raster_output_band = 1
+                    base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
+                    base_uri += r'events/hurricane/catalog_test/'
+                    base_name = storm.unique_name
 
-        raster_uri = base_uri + base_name + ".png"
+                    raster_uri = base_uri + base_name + ".png"
 
-        ini_uri = storm.save_event_ini(base_uri, base_name)
+                    ini_uri = storm.save_event_ini(base_uri, base_name)
 
-        storm.save_base_data(base_uri, base_name)
+                    storm.save_base_data(base_uri, base_name)
 
-        # Save image from scala request
-        footprintImage.save(raster_uri)
+                    # Save image from scala request
+                    footprintImage.save(raster_uri)
 
-        # set current event to what's read from 
-        storm.parse_from_saved_event(ini_uri)
+                    # set current event to what's read from 
+                    storm.parse_from_saved_event(ini_uri)
 
-        print("Storm: {0}, Status Code: {1}".format(storm.unique_name, r.status_code))
+                    print("Storm: {0}, Status Code: {1}, Timestamp: {2}".format(storm.unique_name, r.status, datetime.datetime.now()))
 
-    def scala_catalog_calculate():
+    async def scala_catalog_calculate_run(self, url, sem_count):
+        sem = asyncio.Semaphore(sem_count)
+        tasks = []
+        async with aiohttp.ClientSession() as session:
+            for storm in self.storm_catalog:
+                # pass Semaphore and session to every GET request
+                task = asyncio.ensure_future(self.scala_catalog_calculate_storm(storm, sem, session, url))
+                tasks.append(task)
+
+            responses = asyncio.gather(*tasks)
+            await responses
+
+    # https://pawelmhm.github.io/asyncio/python/aiohttp/2016/04/22/asyncio-aiohttp.html
+    # https://terriblecode.com/blog/asynchronous-http-requests-in-python/
+    def scala_catalog_calculate(self):
+        auto_fspeed = False
+        rmax_nmi = 15
+        px_per_deg_x = 10
+        px_per_deg_y = 10
+        bbox = None
+
+        for storm in self.storm_catalog:
+            if auto_fspeed:
+                storm.calc_fspeed_per_point()
+
+            if rmax_nmi is None:
+                rmax_nmi = storm.rmax_nmi
+
+            storm.BuildLatLonGrid(px_per_deg_x, px_per_deg_y, bbox)
+
         host = gb.GlobalConfig.get('ScalaServer', 'host')
         port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+        calc_method = 'nws23'
         scala_url = "http://{0}:{1}/calculate/hurricane/{2}".format(host, port, calc_method)
 
-        sem = asyncio.Semaphore(2)
-        loop = asyncio.get_event_loop()
-        number = len(self.sotrm_catalog)
+        sem_count = 3
+        
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        future = asyncio.ensure_future(self.scala_catalog_calculate_run(scala_url, sem_count))
+        loop.run_until_complete(future)
+
     pass

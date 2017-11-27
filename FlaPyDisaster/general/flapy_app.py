@@ -85,7 +85,8 @@ class FlaPyApp:
         if self.type_of_parallel == 'multi':
             parallel = True
 
-        storm.calculate_grid(storm.px_per_degree, storm.px_per_degree, storm.fspeed_kts, storm.rmax_nmi, do_parallel=parallel, num_parallel=self.level_of_parallelism, force_recalc=self.force_calculate, lang=lang)
+        self.hurricane_catalog.scala_catalog_calculate()
+        #storm.calculate_grid(storm.px_per_degree, storm.px_per_degree, storm.fspeed_kts, storm.rmax_nmi, do_parallel=parallel, num_parallel=self.level_of_parallelism, force_recalc=self.force_calculate, lang=lang)
         end = time.time()
         print("Calculation Time: " + str(end - start))
         # print("num points: " + str(len(storm.result_array)))
