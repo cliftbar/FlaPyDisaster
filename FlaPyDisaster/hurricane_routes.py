@@ -9,6 +9,7 @@ import urllib.request as urlr
 import numpy as np
 import requests
 import json
+import os
 
 # global variables
 catalog = None
@@ -29,7 +30,12 @@ def hurricane_file_form():
     names = gb.flapy_app.hurricane_catalog.get_names()
     empty_storm_table = gb.flapy_app.get_event_table('null')
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names)
+    scala_host = gb.GlobalConfig.get('ScalaServer', 'host')
+    scala_port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+    scala_address = '{0}:{1}'.format(scala_host, scala_port)
+    scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
+
+    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 
 @app.route('/hurricane/load_single_event', methods=['POST'])
@@ -42,28 +48,44 @@ def hurricane_load_single_event():
     names = gb.flapy_app.hurricane_catalog.get_names()
     empty_storm_table = gb.flapy_app.get_event_table('null')
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names)
+    scala_host = gb.GlobalConfig.get('ScalaServer', 'host')
+    scala_port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+    scala_address = '{0}:{1}'.format(scala_host, scala_port)
+    scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
+
+    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 
 @app.route('/hurricane/main_function', methods=['POST'])
 def hurricane_function_form():
-    hurdat_file = 'Documentation\Hurricane\HURDAT\hurdat2-1851-2015-070616_with_header.txt'
-
+    # hurdat_file = 'Documentation\Hurricane\HURDAT\hurdat2-1851-2015-070616_with_header.txt'
+    hurdat_file = os.path.join('Documentation', 'Hurricane', 'HURDAT', 'hurdat2-1851-2015-070616_with_header.txt')
     gb.flapy_app.hurricane_init_catalog(hurdat_file)
     names = gb.flapy_app.hurricane_catalog.get_names()
     names.reverse()
     empty_storm_table = gb.flapy_app.get_event_table('null')
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names)
+    scala_host = gb.GlobalConfig.get('ScalaServer', 'host')
+    scala_port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+    scala_address = '{0}:{1}'.format(scala_host, scala_port)
+    scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
+
+    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 
 @app.route('/hurricane/table_test', methods=['GET'])
 def table_test():
-    hurdat_file = 'Documentation\Hurricane\HURDAT\hurdat2-1851-2015-070616_with_header.txt'
+    hurdat_file = hurdat_file = os.path.join('Documentation', 'Hurricane', 'HURDAT', 'hurdat2-1851-2015-070616_with_header.txt')
 
     gb.flapy_app.hurricane_init_catalog(hurdat_file)
     storm_data_table = gb.flapy_app.hurricane_catalog.storm_catalog[0].to_model_dataframe().to_html()
-    return fl.render_template("html/hurricane_table_test.html", title="Hurricane Table Test", name="Catalog Data Frame", data=storm_data_table)
+
+    scala_host = gb.GlobalConfig.get('ScalaServer', 'host')
+    scala_port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+    scala_address = '{0}:{1}'.format(scala_host, scala_port)
+    scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
+
+    return fl.render_template("html/hurricane_table_test.html", title="Hurricane Table Test", name="Catalog Data Frame", data=storm_data_table, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 
 @app.route('/hurricane/change_table')
@@ -120,6 +142,13 @@ def hurricane_set_calculation_settings():
     print(fl.request.form)
     form_dict = fl.request.form
     gb.flapy_app.hurricane_set_calculation_settings(form_dict)
+    return 'Success'
+
+@app.route('/hurricane/set_scala_settings', methods=['POST'])
+def hurricane_set_scala_settings():
+    print(fl.request.form)
+    form_dict = fl.request.form
+    gb.flapy_app.hurricane_set_scala_settings(form_dict)
     return 'Success'
 
 
@@ -192,4 +221,9 @@ def hurricane_load_unisys_event():
     names = gb.flapy_app.hurricane_catalog.get_names()
     empty_storm_table = gb.flapy_app.get_event_table('null')
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names)
+    scala_host = gb.GlobalConfig.get('ScalaServer', 'host')
+    scala_port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+    scala_address = '{0}:{1}'.format(scala_host, scala_port)
+    scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
+
+    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
