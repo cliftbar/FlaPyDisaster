@@ -132,6 +132,20 @@ class FlaPyApp:
 
         print(out)
 
+    def hurricane_set_scala_settings(self, input_dict):
+        address = str(input_dict['address']).replace('http://', '')
+        address = address.replace('https://', '')
+        host, port = address.split(':', maxsplit = 1)
+
+        if 'ScalaServer' not in gb.GlobalConfig.sections():
+            gb.GlobalConfig.add_section('ScalaServer')
+
+        gb.GlobalConfig.set('ScalaServer', 'host',  host)
+        gb.GlobalConfig.set('ScalaServer', 'port',  str(port))
+        gb.GlobalConfig.set('ScalaServer', 'worker_count',  str(input_dict['worker_count']))
+
+        gb.save_config()
+
     def hurricane_save_event_to_raster(self, event_save_suffix, user_folder):
         storm = self.hurricane_catalog.current_storm
         start = time.time()
