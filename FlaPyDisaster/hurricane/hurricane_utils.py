@@ -202,18 +202,19 @@ class HurdatCatalog:
                 return the point in a lat, lon, value list format
                 :return: list as [lat, lon, value]
                 """
-                lat = self.lat_y * -1 if self.hemisphere_ns == 'S' else self.lat_y
-                lon = self.lon_x * -1 if self.hemisphere_ew == 'W' else self.lon_x
+                # lat = abs(self.lat_y) * -1 if self.hemisphere_ns == 'S' else abs(self.lat_y)
+                # lon = abs(self.lon_x) * -1 if self.hemisphere_ew == 'W' else abs(self.lon_x)
+                ll = self.point_lat_lon()
                 val = self.max_wind_kts
-                return [lat, lon, val]
+                return [ll[0], ll[1], val]
 
             def point_lat_lon(self):
                 """
                 Get the lat and lon of the point in list format
                 :return: list [lat, lon]
                 """
-                lat = self.lat_y * -1 if self.hemisphere_ns == 'S' else self.lat_y
-                lon = self.lon_x * -1 if self.hemisphere_ew == 'W' else self.lon_x
+                lat = abs(self.lat_y) * -1 if self.hemisphere_ns == 'S' else abs(self.lat_y)
+                lon = abs(self.lon_x) * -1 if self.hemisphere_ew == 'W' else abs(self.lon_x)
                 return [lat, lon]
 
             def for_geojson_point(self):
@@ -221,11 +222,12 @@ class HurdatCatalog:
                 Get the point formatted for geojson
                 :return: list [[lon, lat], value]
                 """
-                lon = self.lon_x * -1 if self.hemisphere_ew == 'W' else self.lon_x
-                lat = self.lat_y * -1 if self.hemisphere_ns == 'S' else self.lat_y
+                # lon = abs(self.lon_x) * -1 if self.hemisphere_ew == 'W' else abs(self.lon_x)
+                # lat = abs(self.lat_y) * -1 if self.hemisphere_ns == 'S' else abs(self.lat_y)
+                ll = self.point_lat_lon()
                 val = self.max_wind_kts
                 seq = self.sequence
-                return [[lon, lat], val, seq]
+                return [[ll[0], ll[1]], val, seq]
 
             def to_hurdat_list(self):
                 """
