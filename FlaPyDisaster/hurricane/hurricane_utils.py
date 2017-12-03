@@ -227,7 +227,7 @@ class HurdatCatalog:
                 ll = self.point_lat_lon()
                 val = self.max_wind_kts
                 seq = self.sequence
-                return [[ll[0], ll[1]], val, seq]
+                return [[ll[1], ll[0]], val, seq]
 
             def to_hurdat_list(self):
                 """
