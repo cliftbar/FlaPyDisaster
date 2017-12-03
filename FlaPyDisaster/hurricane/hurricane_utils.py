@@ -213,8 +213,12 @@ class HurdatCatalog:
                 Get the lat and lon of the point in list format
                 :return: list [lat, lon]
                 """
-                lat = abs(self.lat_y) * -1 if self.hemisphere_ns == 'S' else abs(self.lat_y)
-                lon = abs(self.lon_x) * -1 if self.hemisphere_ew == 'W' else abs(self.lon_x)
+                lat = self.lat_y
+                if self.hemisphere_ns is not None:
+                    lat = abs(lat) * -1 if self.hemisphere_ns == 'S' else abs(lat)
+                lon = self.lon_x
+                if self.hemisphere_ew is not None:
+                    lon = abs(lon) * -1 if self.hemisphere_ew == 'W' else abs(lon)
                 return [lat, lon]
 
             def for_geojson_point(self):
