@@ -1,0 +1,11 @@
+markdown2
+pandas
+gdal
+geojson
+flask
+requests
+matplotlib
+numba
+joblib
+pillow
+conda install markdown2 pandas gdal geojson flask requests matplotlib numba joblib pillow
