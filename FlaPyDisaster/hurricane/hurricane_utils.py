@@ -260,9 +260,11 @@ class HurdatCatalog:
                 Convert the point to a list representation, model format
                 :return: list
                 """
+
+                ll = self.point_lat_lon()
                 return [self.timestamp.strftime("%Y-%m-%d-%H-%M")
-                        , self.lat_y
-                        , self.lon_x
+                        , ll[0]
+                        , ll[1]
                         , self.max_wind_kts
                         , self.min_pressure_mb
                         , self.sequence
