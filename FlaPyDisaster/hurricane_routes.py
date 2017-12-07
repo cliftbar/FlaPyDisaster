@@ -204,7 +204,7 @@ def hurricane_save_event_to_raster():
                 fi.write(str(line[0]) + "\t" + str(line[1]) + "\t" + str(int(round(line[2]))) + "\n")
         if event_save_suffix != '':
             base_name += "_" + event_save_suffix
-        static_uri = r"images/" + base_name + ".png"
+        static_uri = r"images/tmp/" + base_name + ".png"
         version = time.time()
 
     return fl.jsonify(file_uri=fl.url_for('static', filename=static_uri, ver=version))

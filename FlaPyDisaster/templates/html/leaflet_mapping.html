@@ -101,8 +101,13 @@
                             <div id="color_selectors">
                                 {% for color in default_colors[0] %}
                                 <div id="div_color_{{ loop.index0 }}">
-                                    <input type="color" name="color_{{ loop.index0 }}" id="color_{{ loop.index0 }}" value="{{ default_colors[0][loop.index0] }}">
+                                    <div style="display:inline">
+                                        <input type="color" name="color_{{ loop.index0 }}" id="color_{{ loop.index0 }}" value="{{ default_colors[0][loop.index0][0] }}">
+                                        <input type="number" id="opacity_value_{{ loop.index0 }}" name="opacity_value_{{ loop.index0 }}" max="100" min="0" step="1" value={{ default_colors[0][loop.index0][1] }}>
+                                        <label style="display:inline" for="opacity_value_{{ loop.index0 }}">Opacity (%) {{ loop.index0 }}</label>
+                                    </div>
                                     <input type="number" name="color_val_{{ loop.index0 }}" id="color_val_{{ loop.index0 }}" value="{{ default_colors[1][loop.index0] }}">
+                                    <label style="display:inline" for="color_val_{{ loop.index0 }}">Value {{loop.index0}}</label>
                                 </div>
                                 {% endfor %}
                             </div>
