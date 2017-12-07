@@ -272,3 +272,5 @@ ModelManifest.xml
 __pycache__
 # Visual Studio Code
 .vscode/
+
+!/FlaPyDisaster/static/images/*

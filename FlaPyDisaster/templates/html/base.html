@@ -15,6 +15,8 @@
         <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.js') }}"></script>
         <script src="{{ url_for('get_base_js') }}"></script>
         <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/mainPage.css') }}">
+        <!--<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic">-->
     </head>
     <body>
         <div class="nav">
@@ -28,55 +30,11 @@
                 </li>
                 <li><a href="{{ url_for('main_page') }}">Home</a></li>
                 <li><a href="{{ url_for('hurricane_page') }}">Hurricane</a></li>
-                <li><a href="{{ url_for('leaflet_redirect', sender_include='none') }}">Leaflet</a></li>
-                <li><a href="{{ url_for('asteroid_page') }}">Asteroid</a></li>
+                <!--<li><a href="{{ url_for('leaflet_redirect', sender_include='none') }}">Leaflet</a></li>-->
+                <!--<li><a href="{{ url_for('asteroid_page') }}">Asteroid</a></li>-->
                 <!--<li><a href="{{ url_for('documentation_main') }}">Documentation</a></li>-->
                 <li><a href="https://github.com/cliftbar/FlaPyDisaster/wiki">Documentation</a></li>
 
-                <li class="nav_right">
-                    <!-- Trigger the modal with a button -->
-                    <button id="open_user_select_modal" type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#user_select_modal">
-                        {% if user_name %}
-                        {{ user_name }}
-                        {% else %}
-                        Anonymous
-                        {% endif %}
-                    </button>
-                    <!-- Modal -->
-                    <div id="user_select_modal" class="modal fade" role="dialog" data-keyboard="false" data-backdrop="static">
-                        <div class="modal-dialog">
-                            <!-- Event settings modal content-->
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <button id="x_user_select_modal" type="button" class="close" data-dismiss="modal" data-target="user_select_modal">&times;</button>
-                                    <h4 id="user_select_modal_title" class="modal-title">User Select</h4>
-                                </div>
-                                <div class="modal-body">
-                                    <form id="user_select" name="user_select" method="post">
-                                        <p>Select existing user</p>
-                                        <select id="user_selector" name="user_selector">
-                                            <!--<option value="<select a table>">&lt;Select A Table&gt;</option>-->
-                                            {% for name in user_list %}
-                                            <option value="{{ name }}">{{ name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <p>Create new user</p>
-                                        <input type="text" name="create_new_user" id="create_new_user" value="">
-                                        <br>
-                                        <button type="button" onclick="set_user()" class="btn btn-default" data-dismiss="modal">Set User</button>
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button id="close_event_settings_modal" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </li>
-
-                <li class="nav_right">
-                    <button onclick="toggle_visibility('test')" name="toggle_test" id="toggle_test">Toggle Tests</button>
-                </li>
                 <li class="nav_right"><a href="{{ url_for('hard_reset') }}">Reset Application</a></li>
             </ul>
         </div>

@@ -13,6 +13,12 @@ import globes as gb
 @app.route('/home')
 def main_page():
     fl.session['username'] = 'test'
+    return fl.render_template('html/main_page.html')
+
+# server root
+@app.route('/dev')
+def dev_page():
+    fl.session['username'] = 'test'
     return fl.render_template('html/HomePage.html')
 
 
