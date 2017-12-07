@@ -274,3 +274,4 @@ __pycache__
 .vscode/
 
 !/FlaPyDisaster/static/images/*
+/FlaPyDisaster/static/images/tmp/*.png

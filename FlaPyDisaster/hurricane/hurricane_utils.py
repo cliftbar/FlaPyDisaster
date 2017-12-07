@@ -915,7 +915,7 @@ class HurdatCatalog:
                 base_name += "_" + event_suffix
             self.unique_name = base_name
             raster_uri = base_uri + base_name + ".png"
-            static_image_file_uri = gb.STATIC_FOLDER + r'images/' + base_name + ".png"
+            static_image_file_uri = gb.STATIC_FOLDER + r'images/tmp/' + base_name + ".png"
 
             self.save_event_raster(raster_uri, raster_bands, raster_output_band)
 
