@@ -9,6 +9,7 @@ import urllib.request as urlr
 import numpy as np
 import requests
 import json
+import os
 
 # global variables
 catalog = None
@@ -57,8 +58,8 @@ def hurricane_load_single_event():
 
 @app.route('/hurricane/main_function', methods=['POST'])
 def hurricane_function_form():
-    hurdat_file = 'Documentation\Hurricane\HURDAT\hurdat2-1851-2015-070616_with_header.txt'
-
+    # hurdat_file = 'Documentation\Hurricane\HURDAT\hurdat2-1851-2015-070616_with_header.txt'
+    hurdat_file = os.path.join('Documentation', 'Hurricane', 'HURDAT', 'hurdat2-1851-2015-070616_with_header.txt')
     gb.flapy_app.hurricane_init_catalog(hurdat_file)
     names = gb.flapy_app.hurricane_catalog.get_names()
     names.reverse()
@@ -74,7 +75,7 @@ def hurricane_function_form():
 
 @app.route('/hurricane/table_test', methods=['GET'])
 def table_test():
-    hurdat_file = 'Documentation\Hurricane\HURDAT\hurdat2-1851-2015-070616_with_header.txt'
+    hurdat_file = hurdat_file = os.path.join('Documentation', 'Hurricane', 'HURDAT', 'hurdat2-1851-2015-070616_with_header.txt')
 
     gb.flapy_app.hurricane_init_catalog(hurdat_file)
     storm_data_table = gb.flapy_app.hurricane_catalog.storm_catalog[0].to_model_dataframe().to_html()
