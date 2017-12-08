@@ -19,8 +19,8 @@ def global_init():
     flapy_app = fla.FlaPyApp()
 
     global GlobalConfigFileUri
-    GlobalConfigFileUri = r'users/user_config/user_config.ini'
-    sample_config_file_uri = r'users/user_config/user_config.ini.sample'
+    GlobalConfigFileUri = os.path.join('users', 'user_config', 'user_config.ini')
+    sample_config_file_uri = os.path.join('users', 'user_config', 'user_config.ini.sample')
 
     if not os.path.exists(GlobalConfigFileUri):
         shutil.copy2(sample_config_file_uri, GlobalConfigFileUri)
@@ -30,13 +30,13 @@ def global_init():
     GlobalConfig.read(GlobalConfigFileUri)
 
     global UPLOAD_FOLDER
-    UPLOAD_FOLDER = r'tmp/'
+    UPLOAD_FOLDER = r'tmp'
 
     global STATIC_FOLDER
-    STATIC_FOLDER = r'static/'
+    STATIC_FOLDER = r'static'
 
     global USER_FOLDER
-    USER_FOLDER = r'users/'
+    USER_FOLDER = r'users'
 
 def save_config(config=None, file_uri=None, overwrite=False):
     """
