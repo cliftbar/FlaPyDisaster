@@ -1,0 +1,14 @@
+# Top level install command.
+conda install markdown2 pandas gdal geojson flask requests matplotlib numba joblib pillow
+
+# Top level packages
+markdown2
+pandas
+gdal
+geojson
+flask
+requests
+matplotlib
+numba
+joblib
+pillow
