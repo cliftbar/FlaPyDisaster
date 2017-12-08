@@ -18,6 +18,12 @@ catalog = None
 # hurricane main
 @app.route('/hurricane', methods=['GET'])
 def hurricane_page():
+    saved_events = gb.flapy_app.get_saved_events()
+    return fl.render_template('html/hurricane_file_load.html', title="Hurricane", saved_events=saved_events)
+
+# hurricane dev
+@app.route('/hurricane-dev', methods=['GET'])
+def hurricane_page_dev():
     return fl.render_template('html/hurricane.html', title="Hurricane")
 
 
@@ -43,6 +49,24 @@ def hurricane_load_single_event():
     event_ini_file = fl.request.files['event_ini_file']
     file_uri = genu.Web.get_web_file_uri(event_ini_file)
 
+    gb.flapy_app.hurricane_init_catalog()
+    gb.flapy_app.hurricane_add_single_event(file_uri)
+    names = gb.flapy_app.hurricane_catalog.get_names()
+    empty_storm_table = gb.flapy_app.get_event_table('null')
+
+    scala_host = gb.GlobalConfig.get('ScalaServer', 'host')
+    scala_port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+    scala_address = '{0}:{1}'.format(scala_host, scala_port)
+    scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
+
+    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+
+@app.route('/hurricane/load_saved_event', methods=['POST'])
+def hurricane_load_saved_event():
+    form_dict = fl.request.form
+    base_name = form_dict['saved_event_selector']
+
+    file_uri = os.path.join(gb.USER_FOLDER, 'events', 'hurricane', base_name + ".ini")
     gb.flapy_app.hurricane_init_catalog()
     gb.flapy_app.hurricane_add_single_event(file_uri)
     names = gb.flapy_app.hurricane_catalog.get_names()

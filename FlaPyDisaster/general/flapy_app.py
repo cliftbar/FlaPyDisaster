@@ -154,6 +154,18 @@ class FlaPyApp:
         end = time.time()
         print("Raster Save Time: " + str(end - start))
 
+    def get_saved_events(self):
+        saved_events = []
+        events_folder = os.path.join(gb.USER_FOLDER, 'events', 'hurricane')
+
+        for file in os.listdir(events_folder):
+            if file.endswith(".ini"):
+                file_name = os.path.splitext(os.path.basename(file))[0]
+                saved_events.append(file_name)
+
+        return saved_events
+
+
     #######################
     # Asteroid Interfaces #
     #######################

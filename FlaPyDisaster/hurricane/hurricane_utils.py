@@ -15,7 +15,7 @@ import shutil
 import globes as gb
 from PIL import Image
 from io import BytesIO
-
+import os
 
 
 def calc_bearing_north_zero(lat_ref, lon_ref, lat_loc, lon_loc):
@@ -787,14 +787,14 @@ class HurdatCatalog:
             # Build event data from scala image file, as a byproduct saves the event to disk completely
             self.raster_bands = 4
             self.raster_output_band = 1
-            base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
-            base_uri += r'events/hurricane/'
+            # base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
+            base_uri = os.path.join(gb.USER_FOLDER, 'events', 'hurricane')
             base_name = self.unique_name
             
             # save_name += "_" + "scala_temp"
             #self.unique_name = base_name
 
-            raster_uri = base_uri + base_name + ".png"
+            raster_uri = os.path.join(base_uri, base_name + ".png")
 
             ini_uri = self.save_event_ini(base_uri, base_name)
 
@@ -917,13 +917,13 @@ class HurdatCatalog:
             self.raster_bands = raster_bands
             self.raster_output_band = raster_output_band
 
-            base_uri += r'events/hurricane/'
+            base_uri = os.path.join(base_uri, 'events', 'hurricane')
             base_name = self.unique_name
             if event_suffix != '':
                 base_name += "_" + event_suffix
             self.unique_name = base_name
-            raster_uri = base_uri + base_name + ".png"
-            static_image_file_uri = gb.STATIC_FOLDER + r'images/tmp/' + base_name + ".png"
+            raster_uri = os.path.join(base_uri, base_name + ".png")
+            static_image_file_uri = os.path.join(gb.STATIC_FOLDER, 'images', 'tmp/', base_name + ".png")
 
             self.save_event_raster(raster_uri, raster_bands, raster_output_band)
 
@@ -985,15 +985,15 @@ class HurdatCatalog:
             else:
                 name = self.unique_name
             # File paths Configuration
-            raster_path = base_uri + name + ".png"
-            data_path = base_uri + name + ".txt"
+            raster_path = os.path.join(base_uri, name + ".png")
+            data_path = os.path.join(base_uri, name + ".txt")
 
             file_paths_configuration = 'FilePathConfiguration'
             config_file.add_section(file_paths_configuration)
             config_file.set(file_paths_configuration, 'raster_path', raster_path)
             config_file.set(file_paths_configuration, 'data_path', data_path)
 
-            ini_uri = base_uri + name + ".ini"
+            ini_uri = os.path.join(base_uri, name + ".ini")
 
             gb.save_config(config_file, ini_uri)
 
@@ -1008,9 +1008,9 @@ class HurdatCatalog:
             """
 
             if file_name is None:
-                data_path = base_uri + self.unique_name + ".txt"
+                data_path = os.path.join(base_uri, self.unique_name + ".txt")
             else:
-                data_path = base_uri + file_name + ".txt"
+                data_path = os.path.join(base_uri, file_name + ".txt")
 
             df = self.to_model_dataframe()
             df.to_csv(data_path, sep='\t', line_terminator='\n', index=False)
