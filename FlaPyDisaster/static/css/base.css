@@ -40,10 +40,6 @@
 .nav li button {
 }
 
-.active {
-    background-color: #4CAF50;
-}
-
 .indicator {
     display: inline-block;
     width: 25px;

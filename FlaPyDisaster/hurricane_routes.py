@@ -41,7 +41,8 @@ def hurricane_file_form():
     scala_address = '{0}:{1}'.format(scala_host, scala_port)
     scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    # return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    return fl.render_template("html/hurricane_table.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 
 @app.route('/hurricane/load_single_event', methods=['POST'])
@@ -59,7 +60,8 @@ def hurricane_load_single_event():
     scala_address = '{0}:{1}'.format(scala_host, scala_port)
     scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    # return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    return fl.render_template("html/hurricane_table.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 @app.route('/hurricane/load_saved_event', methods=['POST'])
 def hurricane_load_saved_event():
@@ -77,7 +79,8 @@ def hurricane_load_saved_event():
     scala_address = '{0}:{1}'.format(scala_host, scala_port)
     scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    # return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    return fl.render_template("html/hurricane_table.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 
 @app.route('/hurricane/main_function', methods=['POST'])
@@ -94,7 +97,8 @@ def hurricane_function_form():
     scala_address = '{0}:{1}'.format(scala_host, scala_port)
     scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    # return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    return fl.render_template("html/hurricane_table.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 
 @app.route('/hurricane/table_test', methods=['GET'])
@@ -109,7 +113,8 @@ def table_test():
     scala_address = '{0}:{1}'.format(scala_host, scala_port)
     scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
 
-    return fl.render_template("html/hurricane_table_test.html", title="Hurricane Table Test", name="Catalog Data Frame", data=storm_data_table, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    # return fl.render_template("html/hurricane_table_test.html", title="Hurricane Table Test", name="Catalog Data Frame", data=storm_data_table, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    return fl.render_template("html/hurricane_table.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
 
 
 @app.route('/hurricane/change_table')
@@ -250,4 +255,5 @@ def hurricane_load_unisys_event():
     scala_address = '{0}:{1}'.format(scala_host, scala_port)
     scala_worker_count = int(gb.GlobalConfig.get('ScalaServer', 'worker_count'))
 
-    return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    # return fl.render_template("html/hurricane_table_test.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
+    return fl.render_template("html/hurricane_table.html", table_name="Catalog Data Frame", data=empty_storm_table, catalog_names=names, scala_address=scala_address, scala_worker_count=scala_worker_count)
