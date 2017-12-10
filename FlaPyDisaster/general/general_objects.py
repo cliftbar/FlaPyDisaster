@@ -112,14 +112,14 @@ class LatLonGrid(BoundingBox):
         Get the width in blocks of the grid
         :return: int
         """
-        return int(self.get_width() * self.block_per_degree_x)
+        return int(round(self.get_width() * self.block_per_degree_x))
 
     def get_block_height_y(self):
         """
         Get the height in blocks of the grid
         :return: int
         """
-        return int(self.get_height() * self.block_per_degree_y)
+        return int(round(self.get_height() * self.block_per_degree_y))
 
     def get_lat_lon_list(self):
         """
