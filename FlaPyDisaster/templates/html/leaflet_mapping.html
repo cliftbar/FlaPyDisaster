@@ -141,14 +141,19 @@
         </div>
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 {% if event_name %}
                     <h1>{{ event_name }}</h1>
                 {% else %}
                     <h1>FlaPy Disaster</h1>
                 {% endif %}
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <p>
+                    Use this page to map the event.  Click on the "Event" and check off all of the elements you want to view to get started.  Use the slider below to resize the Map and Data table.  Use the "Display" modal to create and save color schemes.
+                </p>
+            </div>
+            <div class="col-md-4">
                 <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#eventModal">Event</button>
                 <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#displayModal">Display</button>
                 <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#drawModal">Draw</button>

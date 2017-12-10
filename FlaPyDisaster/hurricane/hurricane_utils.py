@@ -597,7 +597,7 @@ class HurdatCatalog:
 
             self.storm_data = self.source_data.values.tolist()
 
-            self.time_interpolate_track_points(fspeed=False, heading=False)
+            self.time_interpolate_track_points(fspeed=False, heading=False, verbose=True)
             self.calc_fspeed_per_point()
             self.calc_trackpoint_heading()
 
@@ -636,7 +636,7 @@ class HurdatCatalog:
 
             self.track_points.append(self.HurdatTrackPoint(timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, lat_y, lon_x, max_wind, min_cp, seq, None, None, record_identifier=adv, status=stat))
 
-        def time_interpolate_track_points(self, time_step=None, fspeed=True, heading=True):
+        def time_interpolate_track_points(self, time_step=None, fspeed=True, heading=True, verbose=False):
             """
             Interpolates track to at least the interval given
             :param time_step: timedelta default 1hr
@@ -679,8 +679,9 @@ class HurdatCatalog:
             if heading:
                 self.calc_trackpoint_heading()
 
-            print((temp_tps[-1].timestamp - temp_tps[0].timestamp).total_seconds() / 3600.0)
-            print(self.track_point_count)
+            if verbose:
+                print((temp_tps[-1].timestamp - temp_tps[0].timestamp).total_seconds() / 3600.0)
+                print(self.track_point_count)
 
         def parse_data_frame(self):
             pass
@@ -1060,6 +1061,7 @@ class HurdatCatalog:
                     seq += 1
                     catalog_iter += 1
             storm_temp.calc_trackpoint_heading()
+            storm_temp.time_interpolate_track_points(fspeed=False, heading=False)
             self.storm_catalog.append(storm_temp)
 
     def get_names(self):

@@ -1,0 +1,240 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+    <div class="modal fade" role="dialog" tabindex="-1" id="settings_modal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+                    <h4 class="modal-title">Settings </h4></div>
+                <div class="modal-body">
+                    <div>
+                        <ul class="nav nav-tabs">
+                            <li class="active"><a href="#tab-1" role="tab" data-toggle="tab">Event </a></li>
+                            <li><a href="#tab-2" role="tab" data-toggle="tab">Calculation </a></li>
+                            <li><a href="#tab-3" role="tab" data-toggle="tab">Scala Server</a></li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane active" role="tabpanel" id="tab-1">
+                                <form id="event_settings" name="event_settings">
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#event_save_suffix">Event Name Suffix</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="text" name="event_save_suffix" id="event_save_suffix">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="px_per_degree">Resolution (Pixels Per Degree)</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="px_per_degree" value="10" min="1" step="1" id="px_per_degree">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#max_calc_dist">Maximum Calculation Distance (nmi)</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="max_calc_dist" value="360" min="1" step="1" id="px_per_degree">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#gwaf">Gradient Wind Reduction Factor</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="gwaf" value="0.9" min="0" step="0.1" id="gwaf">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#rmax_nmi">Radius of Maximum Winds (nmi)</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="rmax_nmi" value="15" min="1" step="1" id="rmax_nmi">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#fspeed_kts_input">Forward Speed (kts)</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="fspeed_kts_input" value="15" min="1" step="1" id="fspeed_kts_input">
+                                            <span><label class="control-label checkbox-inline"><input type="checkbox" id="automatic_fspeed">Calculate from positions/timestamps</label></span></div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-default" type="button" onclick="set_event_settings()">Save Event Parameters</button>
+                                    <button class="btn btn-default" type="button" data-dismiss="modal" onclick="set_event_settings()">Save Event Parameters And Close</button>
+                                </form>
+                            </div>
+                            <div class="tab-pane" role="tabpanel" id="tab-2">
+                                <form id="calculation_settings" name="calculation_settings">
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#raster_bands">Raster Bands</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="raster_bands" value="1" min="1" max="4" step="1" id="raster_bands">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#raster_output_band">Raster Output Band (RGBA)</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="raster_output_band" value="1" min="1" max="4" step="1" id="px_per_degree">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#type_of_parallel">Calculation Parallelism</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <select class="form-control" name="type_of_parallel" id="type_of_parallel">
+                                                    <option value="single" selected="">Single Process</option>
+                                                    <option value="multi">Multi Process</option>
+                                                    <option value="gpu" disabled="">GPU</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#level_of_parallel">Number of Processes (if multi)</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="level_of_parallel" value="1" min="1" step="1" id="level_of_parallel">
+                                                <div class="checkbox">
+                                                    <label class="control-label" for="#guess_parallel">
+                                                        <input type="checkbox" name="guess_parallel" value="1" id="guess_parallel">Default Parallelism (# logical cores - 1)</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#force_calc">Force Calculate Footprint</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input type="checkbox" name="force_calc" value="1" id="force_calc">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-default" type="button" onclick="set_calculation_settings()">Save Calculation Parameters</button>
+                                    <button class="btn btn-default" type="button" data-dismiss="modal" onclick="set_calculation_settings()">Save Calculation Parameters And Close</button>
+                                </form>
+                            </div>
+                            <div class="tab-pane" role="tabpanel" id="tab-3">
+                                <form id="scala_settings" name="scala_settings">
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#address">Scala Server Address (host:port)</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="text" name="address" value="{{ scala_address }}" placeholder="host:port" id="address">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="control-label" for="#worker_count">Scala Parallelism (Threads Available)</label>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <input class="form-control" type="number" name="worker_count" value="{{ scala_worker_count }}" min="1" step="1" id="px_per_degree">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-default" type="button" onclick="set_scala_settings()">Set Scala Params</button>
+                                    <button class="btn btn-default" type="button" data-dismiss="modal" onclick="set_scala_settings()">Set Scala Params And Close</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" type="button" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <h1>Event Selection and Calculation</h1>
+        <p>Use this page to event footprints. Select an event from the dropdown, change any settings you need, and click "Calculate Event". The program will used existing footprints if available, so to recalculate use the "Force Recalculate" setting. Events
+            can be calculated using Python or Scala. Use Python if there is no available Scala calculation server (available at <a href="https://github.com/cliftbar/AkkaDisaster">AkkaDisaster</a>). However, python can take much longer for large events.
+            </p>
+        <p>To get started,1851_3_UNNAMED_AL with default settings is suggested, since it is a very small event.</p>
+    </div>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
+                <h4>Select Event</h4>
+                <select id="table_selector" name="catalog_names" onchange="change_table('table_selector', 'track_table', false)">
+                    <option value="<select a table>">&lt;Select A Table&gt;</option>
+                    {% for name in catalog_names %}
+                    <option value="{{ name }}">{{ name }}</option>
+                    {% endfor %}
+                </select>
+                <div id="event_has_calc_indicator" class="indicator status_bad"></div>
+            </div>
+            <div class="col-md-4">
+                <form>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button class="btn btn-default" type="button" onclick="change_table('table_selector', 'track_table', true)">Calculate Event</button>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="radio">
+                                <label>
+                                    <input id="python_calc" name="calc_type" type="radio" checked>Python</label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input id="scala_calc" name="calc_type" type="radio">Scala</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-primary btn-block" type="button" data-toggle="modal" data-target="#settings_modal">Settings</button>
+                <button class="btn btn-default" type="button" id="save_to_raster" onclick="save_event_to_raster('table_selector')">Save Footprint</button>
+                <a class="btn btn-default" role="button" href="{{ url_for('leaflet_mapping') }}">Go To Map</a></div>
+        </div>
+    </div>
+    <!-- Table -->
+    <div class="container">
+        {{data | safe}}
+    </div>
+    <br>
+    <div>
+        <img id="event_pic">
+    </div>
+
+    <script type=text/javascript src="{{ url_for('hurricane_tables_js') }}"></script>
+    <script type=text/javascript>
+        var $SCRIPT_ROOT = {{ request.script_root|tojson | safe }};
+    </script>
+
+{% endblock  %}

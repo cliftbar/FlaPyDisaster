@@ -5,8 +5,9 @@
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#tab-1" role="tab" data-toggle="tab">NOAA Hurdat</a></li>
                 <li><a href="#tab-2" role="tab" data-toggle="tab">Unisys</a></li>
-                <li><a href="#tab-3" role="tab" data-toggle="tab">Open From File</a></li>
-                <li><a href="#tab-4" role="tab" data-toggle="tab">Open Saved Event</a></li>
+                <li><a href="#tab-3" role="tab" data-toggle="tab">Open Saved Event</a></li>
+                <li><a href="#tab-4" role="tab" data-toggle="tab">Open From File</a></li>
+                
             </ul>
             <div class="tab-content">
                 <div class="tab-pane active" role="tabpanel" id="tab-1">
@@ -43,18 +44,6 @@
                 </div>
                 <div class="tab-pane" role="tabpanel" id="tab-3">
                     <div class="col-md-6">
-                        <p>Load a storm from saved files. Eventsmust be in the program format, and consist of three files: a .ini file with event metadata, a .txt file with the track information, and an optional .png file with the event footprint.</p>
-                    </div>
-                    <div class="col-md-6">
-                        <form action="{{ url_for('hurricane_load_single_event') }}" enctype = "multipart/form-data" method="post">
-                            <label for="#ini-file-load">Select .ini file to load</label>
-                            <input id="event_ini_file" name="event_ini_file" type="file">
-                            <button class="btn btn-default" type="submit">Load event from file</button>
-                        </form>
-                    </div>
-                </div>
-                <div class="tab-pane" role="tabpanel" id="tab-4">
-                    <div class="col-md-6">
                         <p>Open an event that has already been calculated. Saved events are stored in the user folder.</p>
                     </div>
                     <div class="col-md-6">
@@ -67,6 +56,18 @@
                                 {% endfor %}
                             </select>
                             <button class="btn btn-default" type="submit">Load Saved Event</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="tab-pane" role="tabpanel" id="tab-4">
+                    <div class="col-md-6">
+                        <p>Load a storm from saved files (only available when running program locally). Events must be in the program format, and consist of three files: a .ini file with event metadata, a .txt file with the track information, and an optional .png file with the event footprint.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <form action="{{ url_for('hurricane_load_single_event') }}" enctype="multipart/form-data" method="post">
+                            <label for="#ini-file-load">Select .ini file to load</label>
+                            <input id="event_ini_file" name="event_ini_file" type="file">
+                            <button class="btn btn-default" type="submit">Load event from file</button>
                         </form>
                     </div>
                 </div>
