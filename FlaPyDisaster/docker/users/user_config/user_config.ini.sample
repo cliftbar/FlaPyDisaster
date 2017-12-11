@@ -1,5 +1,6 @@
 [ApplicationConfig]
-local_access_only = False
+local_access_only: True
+
 
 [DefaultStyles]
 0!default = [[['#0000FF', 20], ['#008000', 20], ['#FFFF00', 20], ['#FFA500', 20], ['#FF0000', 20]], [0, 20, 40, 60, 80]]
@@ -9,6 +10,3 @@ local_access_only = False
 host = localhost
 port = 9001
 worker_count = 1
-
-[UserStyles]
-0!test = [[['#0000ff', '20'], ['#008000', '20'], ['#ffff00', '20'], ['#ffa500', '40'], ['#ff0000', '20'], ['#ffffff', '20']], [0, 20, 40, 60, 80, 0]]
