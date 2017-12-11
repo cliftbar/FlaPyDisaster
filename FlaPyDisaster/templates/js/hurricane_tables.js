@@ -1,7 +1,15 @@
 
 function change_table(source_id, target_class, docalc) {
+    calc_type = 0
     if(docalc){
         document.getElementById('event_has_calc_indicator').className = "indicator status_warn"
+        if (document.getElementById('python_calc').checked) {
+            calc_type = 1
+        }
+        else {
+            calc_type = 2
+        }
+            
     }
     var me = $("#" + source_id);
     var storm_name = me.val()
@@ -14,7 +22,7 @@ function change_table(source_id, target_class, docalc) {
         $SCRIPT_ROOT + "{{ url_for('change_table') }}"
         ,{
             name: storm_name,
-            do_calc: docalc
+            do_calc: calc_type
          }
         , function (data) {
             var target = $("." + target_class);
@@ -23,7 +31,7 @@ function change_table(source_id, target_class, docalc) {
             if (storm_name == 'null'){
                 storm_name = "Event"
             }
-            title.innerText = storm_name + " Footprint Settings"
+            //title.innerText = storm_name + " Footprint Settings"
 
             if(data.has_calc){
                 document.getElementById('event_has_calc_indicator').className = "indicator status_good"
@@ -73,6 +81,19 @@ function set_calculation_settings(){
          }
      );
 }
+
+function set_scala_settings() {
+    $.ajax({
+        type: "POST",
+        url: "{{ url_for('hurricane_set_scala_settings') }}",
+        data: $("#scala_settings").serialize(),
+        success: function (data) {
+            console.log(data)
+        }
+    }
+    );
+}
+
 
 $('#automatic_fspeed').change(function() {
     $('#fspeed_kts_input').attr('disabled',this.checked)

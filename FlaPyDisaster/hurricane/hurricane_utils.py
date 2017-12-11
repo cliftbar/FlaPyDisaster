@@ -13,7 +13,9 @@ import mapping.gdal_mapping as gdm
 import requests
 import shutil
 import globes as gb
-
+from PIL import Image
+from io import BytesIO
+import os
 
 
 def calc_bearing_north_zero(lat_ref, lon_ref, lat_loc, lon_loc):
@@ -200,18 +202,23 @@ class HurdatCatalog:
                 return the point in a lat, lon, value list format
                 :return: list as [lat, lon, value]
                 """
-                lat = self.lat_y * -1 if self.hemisphere_ns == 'S' else self.lat_y
-                lon = self.lon_x * -1 if self.hemisphere_ew == 'W' else self.lon_x
+                # lat = abs(self.lat_y) * -1 if self.hemisphere_ns == 'S' else abs(self.lat_y)
+                # lon = abs(self.lon_x) * -1 if self.hemisphere_ew == 'W' else abs(self.lon_x)
+                ll = self.point_lat_lon()
                 val = self.max_wind_kts
-                return [lat, lon, val]
+                return [ll[0], ll[1], val]
 
             def point_lat_lon(self):
                 """
                 Get the lat and lon of the point in list format
                 :return: list [lat, lon]
                 """
-                lat = self.lat_y * -1 if self.hemisphere_ns == 'S' else self.lat_y
-                lon = self.lon_x * -1 if self.hemisphere_ew == 'W' else self.lon_x
+                lat = self.lat_y
+                if self.hemisphere_ns is not None:
+                    lat = abs(lat) * -1 if self.hemisphere_ns == 'S' else abs(lat)
+                lon = self.lon_x
+                if self.hemisphere_ew is not None:
+                    lon = abs(lon) * -1 if self.hemisphere_ew == 'W' else abs(lon)
                 return [lat, lon]
 
             def for_geojson_point(self):
@@ -219,11 +226,12 @@ class HurdatCatalog:
                 Get the point formatted for geojson
                 :return: list [[lon, lat], value]
                 """
-                lon = self.lon_x * -1 if self.hemisphere_ew == 'W' else self.lon_x
-                lat = self.lat_y * -1 if self.hemisphere_ns == 'S' else self.lat_y
+                # lon = abs(self.lon_x) * -1 if self.hemisphere_ew == 'W' else abs(self.lon_x)
+                # lat = abs(self.lat_y) * -1 if self.hemisphere_ns == 'S' else abs(self.lat_y)
+                ll = self.point_lat_lon()
                 val = self.max_wind_kts
                 seq = self.sequence
-                return [[lon, lat], val, seq]
+                return [[ll[1], ll[0]], val, seq]
 
             def to_hurdat_list(self):
                 """
@@ -256,9 +264,11 @@ class HurdatCatalog:
                 Convert the point to a list representation, model format
                 :return: list
                 """
+
+                ll = self.point_lat_lon()
                 return [self.timestamp.strftime("%Y-%m-%d-%H-%M")
-                        , self.lat_y
-                        , self.lon_x
+                        , ll[0]
+                        , ll[1]
                         , self.max_wind_kts
                         , self.min_pressure_mb
                         , self.sequence
@@ -365,6 +375,7 @@ class HurdatCatalog:
 
             file_paths_configuration = 'FilePathConfiguration'
             data_uri = config_file.get(file_paths_configuration, 'data_path')
+            self.track_points = []
             self.parse_model_data(data_uri, True)
 
         def calc_trackpoint_heading(self):
@@ -555,6 +566,7 @@ class HurdatCatalog:
             for line in self.storm_data:
                 self.parse_model_data_row(line)
             self.track_point_count = len(self.track_points)
+            self.calc_trackpoint_heading()
             pass
 
         def parse_unisys_data(self, unisys_file_uri):
@@ -585,7 +597,7 @@ class HurdatCatalog:
 
             self.storm_data = self.source_data.values.tolist()
 
-            self.time_interpolate_track_points(fspeed=False, heading=False)
+            self.time_interpolate_track_points(fspeed=False, heading=False, verbose=True)
             self.calc_fspeed_per_point()
             self.calc_trackpoint_heading()
 
@@ -624,7 +636,7 @@ class HurdatCatalog:
 
             self.track_points.append(self.HurdatTrackPoint(timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, lat_y, lon_x, max_wind, min_cp, seq, None, None, record_identifier=adv, status=stat))
 
-        def time_interpolate_track_points(self, time_step=None, fspeed=True, heading=True):
+        def time_interpolate_track_points(self, time_step=None, fspeed=True, heading=True, verbose=False):
             """
             Interpolates track to at least the interval given
             :param time_step: timedelta default 1hr
@@ -667,8 +679,9 @@ class HurdatCatalog:
             if heading:
                 self.calc_trackpoint_heading()
 
-            print((temp_tps[-1].timestamp - temp_tps[0].timestamp).total_seconds() / 3600.0)
-            print(self.track_point_count)
+            if verbose:
+                print((temp_tps[-1].timestamp - temp_tps[0].timestamp).total_seconds() / 3600.0)
+                print(self.track_point_count)
 
         def parse_data_frame(self):
             pass
@@ -742,6 +755,7 @@ class HurdatCatalog:
             return list(map((lambda x: {"catalogNumber": self.catalog_number, "stormName": self.name, "basin": self.basin, "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"), "eyeLat_y": x.point_lat_lon()[0], "eyeLon_x": x.point_lat_lon()[1], "maxWind_kts": None if math.isnan(x.max_wind_kts) else x.max_wind_kts, "minCp_mb": None if math.isnan(x.min_pressure_mb) else x.min_pressure_mb, "sequence": x.sequence, "fSpeed_kts": x.fspeed_kts, "isLandfallPoint": bool(x.is_landfall), "rMax_nmi": self.rmax_nmi, "gwaf": self.gwaf, "heading": x.heading_to_next_point}), self.track_points))
 
         def calculate_grid_scala(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
+            calc_method = 'nws23'
             # Send event to scala
             formData = {}
             formData = self.track_to_json()
@@ -759,34 +773,43 @@ class HurdatCatalog:
             formDict['fspeed'] = None if auto_fspeed else gb.flapy_app.hurricane_catalog.current_storm.fspeed_kts
             formDict['par'] = num_parallel if do_parallel else -1
             formDict['maxDist'] = self.max_calc_dist
+            formDict['call_id'] = self.unique_name
 
             # send request
-            r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
+            host = gb.GlobalConfig.get('ScalaServer', 'host')
+            port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+            scala_url = "http://{0}:{1}/calculate/hurricane/{2}".format(host, port, calc_method)
+            # r = requests.get("http://192.168.88.28:9001/calculate/hurricane/nws23", json = formDict)
+            # r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
+            r = requests.get(scala_url, json = formDict)
             
+            footprintImage = Image.open(BytesIO(r.content))
+
             # Build event data from scala image file, as a byproduct saves the event to disk completely
             self.raster_bands = 4
             self.raster_output_band = 1
-            base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
-            base_uri += r'events/hurricane/'
+            # base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
+            base_uri = os.path.join(gb.USER_FOLDER, 'events', 'hurricane')
             base_name = self.unique_name
             
-            base_name += "_" + "scala_temp"
-            self.unique_name = base_name
+            # save_name += "_" + "scala_temp"
+            #self.unique_name = base_name
 
-            raster_uri = base_uri + base_name + ".png"
+            raster_uri = os.path.join(base_uri, base_name + ".png")
 
             ini_uri = self.save_event_ini(base_uri, base_name)
 
             self.save_base_data(base_uri, base_name)
 
             # copy image from scala land to python land.  Assumes running on the same server with acess to both server directories
-            shutil.copy2(r.json()['imageUri'], raster_uri)
+            # shutil.copy2(r.json()['imageUri'], raster_uri)
+            footprintImage.save(raster_uri)
 
             # set current event what's read from 
             self.parse_from_saved_event(ini_uri)
 
             print(r.status_code)
-            print(r.json()['imageUri'])
+            # print(r.json()['imageUri'])
 
         def calculate_grid_python(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
             """
@@ -895,13 +918,13 @@ class HurdatCatalog:
             self.raster_bands = raster_bands
             self.raster_output_band = raster_output_band
 
-            base_uri += r'events/hurricane/'
+            base_uri = os.path.join(base_uri, 'events', 'hurricane')
             base_name = self.unique_name
             if event_suffix != '':
                 base_name += "_" + event_suffix
             self.unique_name = base_name
-            raster_uri = base_uri + base_name + ".png"
-            static_image_file_uri = gb.STATIC_FOLDER + r'images/' + base_name + ".png"
+            raster_uri = os.path.join(base_uri, base_name + ".png")
+            static_image_file_uri = os.path.join(gb.STATIC_FOLDER, 'images', 'tmp/', base_name + ".png")
 
             self.save_event_raster(raster_uri, raster_bands, raster_output_band)
 
@@ -963,15 +986,15 @@ class HurdatCatalog:
             else:
                 name = self.unique_name
             # File paths Configuration
-            raster_path = base_uri + name + ".png"
-            data_path = base_uri + name + ".txt"
+            raster_path = os.path.join(base_uri, name + ".png")
+            data_path = os.path.join(base_uri, name + ".txt")
 
             file_paths_configuration = 'FilePathConfiguration'
             config_file.add_section(file_paths_configuration)
             config_file.set(file_paths_configuration, 'raster_path', raster_path)
             config_file.set(file_paths_configuration, 'data_path', data_path)
 
-            ini_uri = base_uri + name + ".ini"
+            ini_uri = os.path.join(base_uri, name + ".ini")
 
             gb.save_config(config_file, ini_uri)
 
@@ -986,9 +1009,9 @@ class HurdatCatalog:
             """
 
             if file_name is None:
-                data_path = base_uri + self.unique_name + ".txt"
+                data_path = os.path.join(base_uri, self.unique_name + ".txt")
             else:
-                data_path = base_uri + file_name + ".txt"
+                data_path = os.path.join(base_uri, file_name + ".txt")
 
             df = self.to_model_dataframe()
             df.to_csv(data_path, sep='\t', line_terminator='\n', index=False)
@@ -1038,6 +1061,7 @@ class HurdatCatalog:
                     seq += 1
                     catalog_iter += 1
             storm_temp.calc_trackpoint_heading()
+            storm_temp.time_interpolate_track_points(fspeed=False, heading=False)
             self.storm_catalog.append(storm_temp)
 
     def get_names(self):

@@ -3,5 +3,10 @@ local_access_only: True
 
 
 [DefaultStyles]
-0!default = [['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000'], [0, 20, 40, 60, 80]]
-1!hurricane_kts = [['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa500', '#ff0000', '#ff00ff'], [0, 34, 65, 84, 96, 114, 135]]
+0!default = [[['#0000FF', 20], ['#008000', 20], ['#FFFF00', 20], ['#FFA500', 20], ['#FF0000', 20]], [0, 20, 40, 60, 80]]
+1!hurricane_kts = [[['#DCDCDC', 20], ['#0000ff', 20], ['#008000', 20], ['#ffff00', 20], ['#ffa500', 20], ['#ff0000', 20], ['#ff00ff', 20]], [0, 34, 65, 84, 96, 114, 135]]
+
+[ScalaServer]
+host = localhost
+port = 9001
+worker_count = 1

@@ -1,0 +1,80 @@
+﻿{% extends "html/base.html" %}
+{% block content %}
+    <div class="container">
+        <div>
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#tab-1" role="tab" data-toggle="tab">NOAA Hurdat</a></li>
+                <li><a href="#tab-2" role="tab" data-toggle="tab">Unisys</a></li>
+                <li><a href="#tab-3" role="tab" data-toggle="tab">Open Saved Event</a></li>
+                <li><a href="#tab-4" role="tab" data-toggle="tab">Open From File</a></li>
+                
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" role="tabpanel" id="tab-1">
+                    <div class="col-md-6">
+                        <p>Use this tab to load a NOAA Hurdat formatted data file. Either browse to your own or use the default file included in the program, which has historical data from 1851-2015.</p>
+                        <p>Loading the default file is suggested for getting started.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <form action="{{ url_for('hurricane_file_form') }}" method="POST" enctype = "multipart/form-data">
+                            <label for="#hurdat-file">Bowser for a hurdat data file</label>
+                            <input id="FileLoad" name="hurdat_file" type="file" required>
+                            <button class="btn btn-default" type="submit">Load chosen file</button>
+                        </form>
+                        <form action="{{ url_for('hurricane_function_form') }}" method="POST">
+                            <label>Or load the default file</label>
+                            <button class="btn btn-default" type="submit">Load default file</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="tab-pane" role="tabpanel" id="tab-2">
+                    <div class="col-md-6">
+                        <p>Use this tab to load a track file from <a href="http://weather.unisys.com/hurricane/index.php">Unysis</a>, which maintains a set of best track data for current hurricanes. Paste the URL of the data file into the input and click
+                            the button to load. Some urls for recent storms are listed below.</p>
+                        <p>Matthew 2016: <a href="http://weather.unisys.com/hurricane/atlantic/2016/MATTHEW/track.dat">http://weather.unisys.com/hurricane/atlantic/2016/MATTHEW/track.dat</a></p>
+                        <p>Irma 2017: <a href="http://weather.unisys.com/hurricane/atlantic/2017/IRMA/track.dat">http://weather.unisys.com/hurricane/atlantic/2017/IRMA/track.dat</a></p>
+                        <p>Maria 2017: <a href="http://weather.unisys.com/hurricane/atlantic/2017/MARIA/track.dat">http://weather.unisys.com/hurricane/atlantic/2017/MARIA/track.dat</a></p>
+                    </div>
+                    <div class="col-md-6">
+                        <form action="{{ url_for('hurricane_load_unisys_event') }}" method="post" enctype = "multipart/form-data">
+                            <input id="unisys_event_file" name="unisys_event_file" class="form-control" type="url" required placeholder="Unisys Track URL">
+                            <button class="btn btn-default" type="submit">Load Unisys Track</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="tab-pane" role="tabpanel" id="tab-3">
+                    <div class="col-md-6">
+                        <p>Open an event that has already been calculated. Saved events are stored in the user folder.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <form method="POST" action="{{ url_for('hurricane_load_saved_event') }}" enctype = "multipart/form-data">
+                            <label for="#saved_event_selector">Select Event</label>
+                            <select class="form-control" id="saved_event_selector" name="saved_event_selector">
+                                <option value="null" selected>&lt;Select an event&gt;</option>
+                                {% for name in saved_events %}
+                                <option value="{{ name }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-default" type="submit" name="submit_load_saved_event" id="submit_load_saved_event" disabled>Load Saved Event</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="tab-pane" role="tabpanel" id="tab-4">
+                    <div class="col-md-6">
+                        <p>Load a storm from saved files (only available when running program locally). Events must be in the program format, and consist of three files: a .ini file with event metadata, a .txt file with the track information, and an optional .png file with the event footprint.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <form action="{{ url_for('hurricane_load_single_event') }}" enctype="multipart/form-data" method="post">
+                            <label for="#ini-file-load">Select .ini file to load</label>
+                            <input id="event_ini_file" name="event_ini_file" type="file">
+                            <button class="btn btn-default" type="submit">Load event from file</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type=text/javascript src="{{ url_for('static', filename='js/hurricane_file_load.js') }}"></script>
+    <!--<script src="assets/js/jquery.min.js"></script>-->
+    <!--<script src="assets/bootstrap/js/bootstrap.min.js"></script>-->
+{% endblock  %}

@@ -545,9 +545,10 @@ var geojsonSettings = {
     data: []
     , makeStyle: function (value) {
         fillColor = colorSchemeColor_LowerBound(value)
+        opacity = fillColor[1] / 100.0
         return {
             radius: geoJsonStyleValues.radius
-            , fillColor: fillColor
+            , fillColor: fillColor[0]
             , color: geoJsonStyleValues.color
             , weight: geoJsonStyleValues.weight
             , opacity: geoJsonStyleValues.opacity
@@ -718,7 +719,7 @@ var canvas_settings = {
     //, canvas_colors: ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
     , color_scheme: {
         bins: [0, 20, 40, 60, 80]
-        , colors: ['#0000FF', '#008000', '#FFFF00', '#FFA500', '#FF0000']
+        , colors: [['#0000FF', 20], ['#008000', 20], ['#FFFF00', 20], ['#FFA500', 20], ['#FF0000', 20]]
     }
     , opacity: 0.2
 }
@@ -745,9 +746,10 @@ function onDrawLayer(info) {
     //offCtx.fillRect(0, 0, offScreen.width, offScreen.height);
 
     for (var i = 0; i < n; ++i) {
-        var color = canvas_settings.color_scheme.colors[i];
+        var color = canvas_settings.color_scheme.colors[i][0];
+        var opacity = canvas_settings.color_scheme.colors[i][1] / 100.0;
         color_rgb = hexToRgb(color)
-        offCtx.fillStyle = "rgba(" + color_rgb[0].toString() + ", " + color_rgb[1].toString() + ", " + color_rgb[2].toString() + ", " + canvas_settings.opacity.toString() + ")";
+        offCtx.fillStyle = "rgba(" + color_rgb[0].toString() + ", " + color_rgb[1].toString() + ", " + color_rgb[2].toString() + ", " + opacity.toString() + ")";
         //console.log("rgb(" + color[0].toString() + ", " + color[1].toString() + ", " + color[2].toString() + ")");
         offCtx.beginPath();
         offCtx.arc(i * d + r, r, r, 0, 2 * Math.PI);
@@ -829,7 +831,7 @@ function add_legend(bins, colors) {
 
         // loop through our density intervals and generate a label with a colored square for each interval
         for (var i = 0; i < bins.length; i++) {
-            var rgb = hexToRgb(canvas_settings.color_scheme.colors[i])
+            var rgb = hexToRgb(canvas_settings.color_scheme.colors[i][0])
             color = 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
             div.innerHTML +=
                 '<i style="background:' + color + '"></i> ' +
@@ -851,7 +853,7 @@ function add_legend(bins, colors) {
 var color_count = 5
 function add_color(color, value){
     if(color == null){
-        color = "#ffffff";
+        color = ["#ffffff", 20];
     }
 
     if(value == null){
@@ -860,9 +862,14 @@ function add_color(color, value){
 
     var newdiv = document.createElement("div");
     newdiv.setAttribute("id", "div_color_" + color_count)
-    newdiv.innerHTML = "<input type='color' name='color_" + color_count + "' id='color_" + color_count + "' value=" + color + ">\n"
-        + "<input type='number' name='color_val_" + color_count + "' id='color_val_" + color_count + "' value='" + value + "'>";
-    document.getElementById('bin_colors').appendChild(newdiv);
+    newdiv.innerHTML = "<div style='display:inline'>\n"
+        + "<input type='color' name='color_" + color_count + "' id='color_" + color_count + "' value=" + color[0] + ">\n"
+        + "<input type='number' id='opacity_value_" + color_count + "' name='opacity_value_" + color_count + "' max='100' min='0' step= '1' value=" + color[1] + ">\n"
+        + "<label style='display:inline' for='opacity_value_" + color_count + "'>Opacity (%) " + color_count + "</label>\n"
+        + "</div >\n"
+        + "<input type='number' name='color_val_" + color_count + "' id='color_val_" + color_count + "' value='" + value + "'>"
+        + "<label style='display:inline' for='color_val_" + color_count + "'>Value " + color_count + "</label >";
+    document.getElementById('color_selectors').appendChild(newdiv);
     color_count++;
     document.getElementById('number_colors').value = color_count;
 }
@@ -936,7 +943,7 @@ function apply_colors() {
 }
 
 //DEP
-var hurricane_break_colors = ['#DCDCDC', '#0000ff', '#008000', '#ffff00', '#ffa500', '#ff0000', '#ff00ff']
+var hurricane_break_colors = [['#DCDCDC', 20], ['#0000ff', 20], ['#008000', 20], ['#ffff00', 20], ['#ffa500'], ['#ff0000', 20], ['#ff00ff', 20]]
 var hurricane_breaks = [0, 34, 65, 84, 96, 114, 135]
 function set_hurricane_colors(){
     canvas_settings.color_scheme.colors = hurricane_break_colors;
@@ -1064,8 +1071,9 @@ function update_scheme_from_picker() {
     for (var i = 0; i < color_count; ++i) {
         var element = document.getElementById("div_color_" + (color_count - 1))
         new_color = document.getElementById("color_" + i).value
+        new_opacity = document.getElementById("opacity_value_" + i).value
         new_value = parseInt(document.getElementById("color_val_" + i).value)
-        new_scheme.colors.push(new_color)
+        new_scheme.colors.push([new_color, new_opacity])
         new_scheme.bins.push(new_value)
     }
     canvas_settings.color_scheme = new_scheme
@@ -1133,9 +1141,11 @@ function color_pretty_breaks(value, colors, bins, opacity) {
     opacity = typeof opacity !== 'undefined' ? opacity : 1.0;
 
     var color = [0, 0, 0];
+    var opacity = 0;
     for (var pos = 0; pos < bins.length; pos++) {
         if (value <= bins[pos]) {
-            color = colors[pos];
+            color = colors[pos][0];
+            opacity = colors[pos][1] / 100.0;
             break;
         }
     }
@@ -1147,9 +1157,11 @@ function color_pretty_breaks_upper(value, colors, bins, opacity) {
     opacity = typeof opacity !== 'undefined' ? opacity : 1.0;
 
     var color = [0, 0, 0];
+    var opacity = 0;
     for (var pos = bins.length; pos >= 0; --pos) {
         if (value > bins[pos]) {
-            color = colors[pos];
+            color = colors[pos][0];
+            opacity = colors[pos][1] / 100.0;
             break;
         }
     }

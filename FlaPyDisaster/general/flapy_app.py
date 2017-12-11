@@ -132,6 +132,20 @@ class FlaPyApp:
 
         print(out)
 
+    def hurricane_set_scala_settings(self, input_dict):
+        address = str(input_dict['address']).replace('http://', '')
+        address = address.replace('https://', '')
+        host, port = address.split(':', maxsplit = 1)
+
+        if 'ScalaServer' not in gb.GlobalConfig.sections():
+            gb.GlobalConfig.add_section('ScalaServer')
+
+        gb.GlobalConfig.set('ScalaServer', 'host',  host)
+        gb.GlobalConfig.set('ScalaServer', 'port',  str(port))
+        gb.GlobalConfig.set('ScalaServer', 'worker_count',  str(input_dict['worker_count']))
+
+        gb.save_config()
+
     def hurricane_save_event_to_raster(self, event_save_suffix, user_folder):
         storm = self.hurricane_catalog.current_storm
         start = time.time()
@@ -139,6 +153,18 @@ class FlaPyApp:
         storm.save_event(self.raster_bands, self.raster_output_band, user_folder, event_save_suffix)
         end = time.time()
         print("Raster Save Time: " + str(end - start))
+
+    def get_saved_events(self):
+        saved_events = []
+        events_folder = os.path.join(gb.USER_FOLDER, 'events', 'hurricane')
+
+        for file in os.listdir(events_folder):
+            if file.endswith(".ini"):
+                file_name = os.path.splitext(os.path.basename(file))[0]
+                saved_events.append(file_name)
+
+        return saved_events
+
 
     #######################
     # Asteroid Interfaces #

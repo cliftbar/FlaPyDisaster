@@ -101,8 +101,13 @@
                             <div id="color_selectors">
                                 {% for color in default_colors[0] %}
                                 <div id="div_color_{{ loop.index0 }}">
-                                    <input type="color" name="color_{{ loop.index0 }}" id="color_{{ loop.index0 }}" value="{{ default_colors[0][loop.index0] }}">
+                                    <div style="display:inline">
+                                        <input type="color" name="color_{{ loop.index0 }}" id="color_{{ loop.index0 }}" value="{{ default_colors[0][loop.index0][0] }}">
+                                        <input type="number" id="opacity_value_{{ loop.index0 }}" name="opacity_value_{{ loop.index0 }}" max="100" min="0" step="1" value={{ default_colors[0][loop.index0][1] }}>
+                                        <label style="display:inline" for="opacity_value_{{ loop.index0 }}">Opacity (%) {{ loop.index0 }}</label>
+                                    </div>
                                     <input type="number" name="color_val_{{ loop.index0 }}" id="color_val_{{ loop.index0 }}" value="{{ default_colors[1][loop.index0] }}">
+                                    <label style="display:inline" for="color_val_{{ loop.index0 }}">Value {{loop.index0}}</label>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -136,14 +141,19 @@
         </div>
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 {% if event_name %}
                     <h1>{{ event_name }}</h1>
                 {% else %}
                     <h1>FlaPy Disaster</h1>
                 {% endif %}
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
+                <p>
+                    Use this page to map the event.  Click on the "Event" and check off all of the elements you want to view to get started.  Use the slider below to resize the Map and Data table.  Use the "Display" modal to create and save color schemes.
+                </p>
+            </div>
+            <div class="col-md-4">
                 <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#eventModal">Event</button>
                 <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#displayModal">Display</button>
                 <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#drawModal">Draw</button>
