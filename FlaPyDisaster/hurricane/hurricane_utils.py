@@ -645,7 +645,7 @@ class HurdatCatalog:
             if time_step is None:
                 time_step = datetime.timedelta(hours=1)
 
-            temp_tps = []
+            temp_tps = [self.track_points[0]]
             for pos in range(self.track_point_count-1):
                 temp_start_tp = self.track_points[pos]
                 end_tp = self.track_points[pos+1]
