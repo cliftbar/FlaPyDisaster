@@ -165,6 +165,13 @@ class FlaPyApp:
 
         return saved_events
 
+    def calculate_catalog(self, lang = 'python'):
+        for storm in self.hurricane_catalog.storm_catalog:
+            try:
+                self.calculate_event(storm.name, lang)
+            except:
+                print('{0} failed to calculate'.format(storm.name))
+
 
     #######################
     # Asteroid Interfaces #

@@ -1,5 +1,5 @@
 
-function change_table(source_id, target_class, docalc) {
+function change_table(source_id, target_class, docalc, catalog_calc = false) {
     calc_type = 0
     if(docalc){
         document.getElementById('event_has_calc_indicator').className = "indicator status_warn"
@@ -22,7 +22,8 @@ function change_table(source_id, target_class, docalc) {
         $SCRIPT_ROOT + "{{ url_for('change_table') }}"
         ,{
             name: storm_name,
-            do_calc: calc_type
+            do_calc: calc_type,
+            catalog_calc: catalog_calc
          }
         , function (data) {
             var target = $("." + target_class);

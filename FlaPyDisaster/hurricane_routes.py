@@ -121,14 +121,18 @@ def table_test():
 def change_table():
     name = fl.request.args.get('name', '', type=str)
     do_calc = fl.request.args.get('do_calc', 0, type=int)
+    catalog_calc = fl.request.args.get('catalog_calc', False, type=bool)
+    lang = 'python'
+    if do_calc == 2:
+        lang = 'scala'
 
+    if catalog_calc:
+        gb.flapy_app.calculate_catalog(lang)
+        pass
+    
     if name != 'null':
         gb.flapy_app.set_current_event(name)
-
-        if do_calc == 1:
-            gb.flapy_app.calculate_event(name)
-        elif do_calc == 2:
-            gb.flapy_app.calculate_event(name, "scala")
+        gb.flapy_app.calculate_event(name, lang)
         ret_data = gb.flapy_app.get_event_table('current')
         calcd = gb.flapy_app.has_event_calcd('current')
 
