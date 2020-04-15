@@ -1,7 +1,14 @@
 ﻿import math
-import numba
-from numba import jit
 
+from flapy_disaster.utilities.flapy_types import (
+    DistanceNauticalMiles,
+    AngleDegrees,
+    FrequencyHours,
+    PressureInHg,
+    VelocityKnots,
+    PressureMillibar,
+    PressureKilopascal
+)
 
 """
 SPH: Standard Project Hurricane
@@ -34,8 +41,8 @@ MpsToKts = 1.94384
 KpaToInhg = 0.2953
 MbToInhg = 0.02953
 
-@jit(nopython=True,cache=True)
-def linear_interpolation(x, x1, x2, y1, y2):
+
+def linear_interpolation(x: float, x1: float, x2: float, y1: float, y2: float) -> float:
     """
 
     :param x:
@@ -47,8 +54,8 @@ def linear_interpolation(x, x1, x2, y1, y2):
     """
     return (((y2 - y1) / (x2 - x1)) * (x - x1)) + y1
 
-@jit(nopython=True,cache=True)
-def radial_decay(r_nmi, rmax_nmi):
+
+def radial_decay(r_nmi: DistanceNauticalMiles, rmax_nmi: DistanceNauticalMiles) -> float:
     """
     Calculates the radial decay factor for a given radius.
     Rmax_nmi < r_nmi: NWS 23 pdf page 53, page 27, Figure 2.12, empirical fit
@@ -58,33 +65,38 @@ def radial_decay(r_nmi, rmax_nmi):
     :return: float 0 <= radial decay <= 1
     """
 
-    # ret = 0
+    ret_decay: float
     if r_nmi >= rmax_nmi:
         # NWS 23 pdf page 53
-        slope = (-0.051 * math.log(rmax_nmi)) - 0.1757
-        intercept = (0.4244 * math.log(rmax_nmi)) + 0.7586
-        ret = (slope * math.log(r_nmi)) + intercept
+        slope: float = (-0.051 * math.log(rmax_nmi)) - 0.1757
+        intercept: float = (0.4244 * math.log(rmax_nmi)) + 0.7586
+        ret_decay = (slope * math.log(r_nmi)) + intercept
     else:
         # NWS 23 pdf page 54
         # ret = 1.01231578 / (1 + math.exp(-8.612066494 * ((r_nmi / float(rmax_nmi)) - 0.678031222)))
-        ret = 1 # this is a concession for modeling time series, where everything within the max wind radius is expected to experience the max wind radius while the storm translates
+
+        # this is a concession for modeling the time series,
+        # where everything within the max wind radius is expected to
+        # experience the max wind radius while the storm translates
+        ret_decay = 1
 
     # keep radial decay between 0 and 1
-    ret = max(min(ret, 1), 0)
-    return ret
+    ret_decay = max(min(ret_decay, 1), 0)
+    return ret_decay
 
-@jit(nopython=True,cache=True)
-def coriolis_frequency(lat_deg):
+
+def coriolis_frequency(lat_deg: AngleDegrees) -> FrequencyHours:
     """
     Calculate the coriolis factor for a given latitude
     :param lat_deg: float deg
     :return: float hr**-1 coriolis factor
     """
-    w = 2.0 * math.pi / 24
-    return 2.0 * w * math.sin(math.radians(lat_deg))
+    w: float = 2.0 * math.pi / 24
+    coriolis_factor: FrequencyHours = 2.0 * w * math.sin(math.radians(lat_deg))
+    return coriolis_factor
 
-@jit(nopython=True,cache=True)
-def k_density_coefficient(lat_deg):
+
+def k_density_coefficient(lat_deg: AngleDegrees) -> float:
     """
     NWS 23 pdf page 50, page 24, figure 2.10, emperical relationship (linear regression)
     This is for the PMH, We can also improve this relationship
@@ -98,25 +110,35 @@ def k_density_coefficient(lat_deg):
     """
 
     # return 70.1 + -0.185714286 * (lat_deg - 24.0)
-    return 69.1952184 / (1 + math.exp(0.20252 * (lat_deg - 58.72458)))
+    k_coeff: float = 69.1952184 / (1 + math.exp(0.20252 * (lat_deg - 58.72458)))
+    return k_coeff
 
-@jit(nopython=True,cache=True)
-def gradient_wind_at_radius(pw_inhg, cp_inhg, r_nmi, lat_deg):
+
+def gradient_wind_at_radius(pw_inhg: PressureInHg,
+                            cp_inhg: PressureInHg,
+                            r_nmi: DistanceNauticalMiles,
+                            lat_deg: AngleDegrees) -> VelocityKnots:
     """
     NWS 23 pdf page 49, page 23, equation 2.2
     :param pw_inhg: float Peripheral Pressure, pressure at edge of storm, should be near MSLP, In. Hg
     :param cp_inhg: float Central Pressure in In. Hg
-    :param r_nmi: int Radius from center of storm in nautical miles.  Use Radius of max winds (Rmax) to get maximum gradient wind
+    :param r_nmi: int Radius from center of storm in nautical miles.
+                  Use Radius of max winds (Rmax) to get maximum gradient wind
     :param lat_deg: int deg Latitude of hurricane eye
     :return:
     """
 
-    k = k_density_coefficient(lat_deg)
-    f = coriolis_frequency(lat_deg)
-    return k * ((pw_inhg - cp_inhg) ** 0.5) - (r_nmi * f) / 2
+    k: float = k_density_coefficient(lat_deg)
+    f: FrequencyHours = coriolis_frequency(lat_deg)
+    gradient_wind_velocity: VelocityKnots = (k * ((pw_inhg - cp_inhg) ** 0.5)) - (r_nmi * f) / 2
+    return gradient_wind_velocity
 
-@jit(nopython=True,cache=True)
-def asymmetry_factor(fspeed_kts, r_nmi, rmax_nmi, angle_from_center, track_bearing):
+
+def asymmetry_factor(fspeed_kts: VelocityKnots,
+                     r_nmi: DistanceNauticalMiles,
+                     rmax_nmi: DistanceNauticalMiles,
+                     angle_from_center: AngleDegrees,
+                     track_bearing: AngleDegrees) -> VelocityKnots:
     """
     NWS 23 pdf page 51, page 25, equation 2.5
     NWS 23 pdf page 263, page 269
@@ -131,20 +153,20 @@ def asymmetry_factor(fspeed_kts, r_nmi, rmax_nmi, angle_from_center, track_beari
     :return: float Asymmetry Factor
     """
 
-    to = 1
-    phi_r = inflow_angle(r_nmi, rmax_nmi)  # need to figure out direction
-    phi_rmax = inflow_angle(rmax_nmi, rmax_nmi)  # need to figure out direction
-    phi_beta = (phi_r - phi_rmax) % 360
-    bearing_shift = (90 - angle_from_center + track_bearing) % 360
-    beta = (phi_beta + bearing_shift) % 360
+    t_zero: VelocityKnots = 1
+
+    phi_r: AngleDegrees = inflow_angle(r_nmi, rmax_nmi)  # need to figure out direction
+    phi_rmax: AngleDegrees = inflow_angle(rmax_nmi, rmax_nmi)  # need to figure out direction
+    phi_beta: AngleDegrees = (phi_r - phi_rmax) % 360
+    bearing_shift: AngleDegrees = (90 - angle_from_center + track_bearing) % 360
+    beta: AngleDegrees = (phi_beta + bearing_shift) % 360
     # print("Phi_r: {0}, Phi_rmax: {1}, beta: {2}, bearing_shift: {3}".format(phi_r, phi_rmax, beta, bearing_shift))
-    asym = 1.5 * (fspeed_kts ** 0.63) * (to ** 0.37) * math.cos(math.radians(beta))
+    asym: VelocityKnots = 1.5 * (fspeed_kts ** 0.63) * (t_zero ** 0.37) * math.cos(math.radians(beta))
 
     return asym
-    # return beta
 
-@jit(nopython=True,cache=True)
-def inflow_angle(r_nmi, rmax_nmi):
+
+def inflow_angle(r_nmi: DistanceNauticalMiles, rmax_nmi: DistanceNauticalMiles) -> AngleDegrees:
     """
     Emperical inflow angle calculation of PMH
     NWS 23 pdf page 55
@@ -154,30 +176,42 @@ def inflow_angle(r_nmi, rmax_nmi):
     :return: float deg Inflow angle
     """
 
-    # phi = None
-    r_phi_max = (3.0688 * rmax_nmi) - 2.7151
+    phi: AngleDegrees
+    r_phi_max: DistanceNauticalMiles = (3.0688 * rmax_nmi) - 2.7151
     if r_nmi < r_phi_max:
         a = 11.438 * (rmax_nmi ** -1.416)
         b = (1.1453 * rmax_nmi) + 1.4536
-        phi_max = 9.7043566358 * math.log(rmax_nmi) - 2.7295806727
+        phi_max: AngleDegrees = 9.7043566358 * math.log(rmax_nmi) - 2.7295806727
         phi = phi_max / (1 + math.exp(-1 * a * (r_nmi - b)))
     else:  # following
-        r_nmi_use = min(r_nmi, 130)
+        r_nmi_use: DistanceNauticalMiles = min(r_nmi, 130)
 
-        x1 = (0.0000896902 * rmax_nmi * rmax_nmi) - (0.0036924418 * rmax_nmi) + 0.0072307906
-        x2 = (0.000002966 * rmax_nmi * rmax_nmi) - (0.000090532 * rmax_nmi) - 0.0010373287
-        x3 = (-0.0000000592 * rmax_nmi * rmax_nmi) + (0.0000019826 * rmax_nmi) - 0.0000020198
-        c = (9.7043566341 * math.log(rmax_nmi)) - 2.7295806689
-        phi = (x3 * ((r_nmi_use - r_phi_max) ** 3)) + (x2 * ((r_nmi_use - r_phi_max) ** 2)) + (x1 * (r_nmi_use - r_phi_max)) + c
+        x1: float = (0.0000896902 * rmax_nmi * rmax_nmi) - (0.0036924418 * rmax_nmi) + 0.0072307906
+        x2: float = (0.000002966 * rmax_nmi * rmax_nmi) - (0.000090532 * rmax_nmi) - 0.0010373287
+        x3: float = (-0.0000000592 * rmax_nmi * rmax_nmi) + (0.0000019826 * rmax_nmi) - 0.0000020198
+        c: float = (9.7043566341 * math.log(rmax_nmi)) - 2.7295806689
+        phi: AngleDegrees = ((x3 * ((r_nmi_use - r_phi_max) ** 3))
+                             + (x2 * ((r_nmi_use - r_phi_max) ** 2))
+                             + (x1 * (r_nmi_use - r_phi_max))
+                             + c)
         if 130 < r_nmi < 360:  # justification on NWS23 pdf page 287 page 263
-            delta_phi = linear_interpolation(r_nmi, 130, 360, phi, (phi - 2))
+            delta_phi: AngleDegrees = linear_interpolation(r_nmi, 130, 360, phi, (phi - 2))
             phi += delta_phi
         elif 360 <= r_nmi:
             phi -= 2
     return phi
 
-@jit(signature_or_function=(numba.optional(numba.double), numba.double, numba.double, numba.double, numba.int64, numba.double, numba.double, numba.optional(numba.double), numba.optional(numba.double), numba.optional(numba.double)),nopython=True,cache=True)
-def calc_windspeed(cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center, track_heading, pw_kpa, vmax_kts, gwaf=0.9):
+
+def calc_windspeed(cp_mb: PressureMillibar,
+                   r_nmi: DistanceNauticalMiles,
+                   lat_deg: AngleDegrees,
+                   fspeed_kts: VelocityKnots,
+                   rmax_nmi: DistanceNauticalMiles,
+                   angle_to_center: AngleDegrees,
+                   track_heading: AngleDegrees,
+                   pw_kpa: PressureKilopascal,
+                   vmax_kts: VelocityKnots,
+                   gwaf: float = 0.9) -> VelocityKnots:
     """
     Calculate the windspeed at a given point from parameters
     :param cp_mb: float mb central pressure
@@ -186,10 +220,12 @@ def calc_windspeed(cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center,
     :param fspeed_kts: float kts Forward speed of the storm
     :param rmax_nmi: int n.mi.  Radius of maximum winds
     :param angle_to_center: float deg Simple angle from point to center of storm, in bearing notation (North = 0)
-    :param track_heading: float def eading of track from current point to next point, except for the last point, which uses the previous heading
+    :param track_heading: float def eading of track from current point to next point,
+                          except for the last point, which uses the previous heading
     :param pw_kpa: float mb Peripheral Pressure, pressure at edge of storm, should be near MSLP
     :param vmax_kts: int kts Input max windspeed to skip the calculation for it.  Useful when Vmax is know for a storm.
-    :param gwaf: float  Gradient Wind Adjustment Factor, semi-emprical adjustment to the Gradient Wind. Range 0.75-1.05, Generally between 0.9 and 1. NWS 23 pdf page 50, page 24, 2.2.7.2.1
+    :param gwaf: float  Gradient Wind Adjustment Factor, semi-emprical adjustment to the Gradient Wind.
+                        Range 0.75-1.05, Generally between 0.9 and 1. NWS 23 pdf page 50, page 24, 2.2.7.2.1
     :return: float kts Windspeed at a given radius for the storm
     """
     
@@ -199,25 +235,24 @@ def calc_windspeed(cp_mb, r_nmi, lat_deg, fspeed_kts, rmax_nmi, angle_to_center,
     if pw_kpa is None:
         pw_kpa = Pw_PMH_kPa
 
+    # Step 1: Calculate Maximum Gradient Windspeed if unknown, 10m-10min Average
+    vgx: VelocityKnots
     if cp_mb is None and vmax_kts is None:
         raise ValueError('No vmax and no cp')
-
-    if cp_mb is not None:
+    elif cp_mb is not None:
         cp_inhg = cp_mb * MbToInhg
-    pw_inhg = pw_kpa * KpaToInhg
+        pw_inhg: PressureInHg = pw_kpa * KpaToInhg
 
-    # Step 1: Calculate Maximum Gradient Windspeed if unknown, 10m-10min Average
-    vgx = 0
-    if vmax_kts is None:
         vgx = gradient_wind_at_radius(pw_inhg, cp_inhg, rmax_nmi, lat_deg)
     else:
         vgx = vmax_kts
+
     # Step 2: Calculate the Radial Decay
-    radial_decay_factor = radial_decay(r_nmi, rmax_nmi)  # need to convert to nmi
+    radial_decay_factor: float = radial_decay(r_nmi, rmax_nmi)  # need to convert to nmi
     # Step 3: Calculate the Asymmetry Factor
-    asym = asymmetry_factor(fspeed_kts, r_nmi, rmax_nmi, angle_to_center, track_heading)
+    asym: VelocityKnots = asymmetry_factor(fspeed_kts, r_nmi, rmax_nmi, angle_to_center, track_heading)
 
     # apply all factors and return windspeed at point
-    windspeed_kts = (vgx * gwaf * radial_decay_factor) + asym
+    windspeed_kts: VelocityKnots = (vgx * gwaf * radial_decay_factor) + asym
     return windspeed_kts
     # return asym + 100

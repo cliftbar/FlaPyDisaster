@@ -1,0 +1,47 @@
+! start of BT12osc.fi (inserted into code via 'include BT12osc.fi')
+!    ***NOTE***
+!      The include statement must come before 'include smsim.fi', because the latter contains
+!      some executable statements.
+
+! Dates: 06/18/11 - Written by D. Boore
+!        07/02/11 - Rename variables in order to include both ena and wna corrections
+!        08/02/11 - Changed "BT11" to "BT12", in anticipation of the paper being published in 2012.
+!        07/23/14 - Temp change for the new BT14 factors
+
+      integer nm4BT12ena, nr4BT12ena 
+
+      integer, parameter :: nmparam=13, nrparam=15  ! Added 07/23/14
+      real m4BT12ena(nmparam), logr4BT12ena(nrparam)
+      real c1BT12ena(nmparam,nrparam), c2BT12ena(nmparam,nrparam), 
+     :     c3BT12ena(nmparam,nrparam)
+      real c4BT12ena(nmparam,nrparam), c5BT12ena(nmparam,nrparam), 
+     :     c6BT12ena(nmparam,nrparam)
+      real c7BT12ena(nmparam,nrparam)
+      real td_rv_pga_ena(nmparam,nrparam), 
+     :     td_rv_pgv_ena(nmparam,nrparam) 
+      
+      integer nm4BT12wna, nr4BT12wna
+      real m4BT12wna(nmparam), logr4BT12wna(nrparam)
+      real c1BT12wna(nmparam,nrparam), c2BT12wna(nmparam,nrparam), 
+     :     c3BT12wna(nmparam,nrparam)
+      real c4BT12wna(nmparam,nrparam), c5BT12wna(nmparam,nrparam), 
+     :     c6BT12wna(nmparam,nrparam)
+      real c7BT12wna(nmparam,nrparam) 
+      real td_rv_pga_wna(nmparam,nrparam), 
+     :     td_rv_pgv_wna(nmparam,nrparam) 
+      
+      common /BT12ena_pars/ nm4BT12ena, nr4BT12ena,
+     :      m4BT12ena, logr4BT12ena,
+     :      c1BT12ena, c2BT12ena, c3BT12ena,
+     :      c4BT12ena, c5BT12ena, c6BT12ena,
+     :      c7BT12ena,
+     :      td_rv_pga_ena, td_rv_pgv_ena
+ 
+      common /BT12wna_pars/ nm4BT12wna, nr4BT12wna,
+     :      m4BT12wna, logr4BT12wna,
+     :      c1BT12wna, c2BT12wna, c3BT12wna,
+     :      c4BT12wna, c5BT12wna, c6BT12wna,
+     :      c7BT12wna,
+     :      td_rv_pga_wna, td_rv_pgv_wna
+ 
+! end of BT12osc.fi (inserted into code via 'include BT12osc.fi')

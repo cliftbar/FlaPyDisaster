@@ -20,7 +20,10 @@ class ModelHurricaneEvent:
     model_headers = ["catalog_number", "name", "basin", "timestamp", "lat_y", "lon_x", "max_wind_kts", "min_cp_mb",
                      "sequence", "rmax_nmi", "fspeed_kts", "gwaf"]
 
-    def __init__(self, name, track_file_uri, bbox, block_per_deg_x=10, block_per_deg_y=10):
+    def __init__(self,
+                 name: str,
+                 track_file_uri: str,
+                 bbox, block_per_deg_x=10, block_per_deg_y=10):
         """
         :param geno.BoundingBox bbox: input bounding box
         """

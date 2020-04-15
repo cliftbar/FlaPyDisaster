@@ -1,24 +1,33 @@
-﻿import datetime
+﻿from datetime import datetime, timedelta
+from pathlib import Path
+from typing import List, Any
+
 import pandas as pd
-import mapping.leaflet_map as lm
+import flapy_disaster.services.mapping.leaflet_map as lm
 import copy
 import math
-import general.general_objects as geno
-import general.general_units as genu
-import hurricane.hurricane_nws23 as hm
+import flapy_disaster.utilities.general_objects as geno
+import flapy_disaster.utilities.general_units as genu
+import flapy_disaster.services.hurricane.hurricane_nws23 as hm
 import joblib as job
 import configparser as cpar
 import numpy as np
-import mapping.gdal_mapping as gdm
+import flapy_disaster.services.mapping.gdal_mapping as gdm
 import requests
 import shutil
-import globes as gb
+# import globes as gb
 from PIL import Image
 from io import BytesIO
 import os
 
+from flapy_disaster.utilities.flapy_types import AngleDegrees, Point, Velocity, DistanceNauticalMiles, PressureMillibar, \
+    VelocityKnots, PointValue, GeojsonPoint
 
-def calc_bearing_north_zero(lat_ref, lon_ref, lat_loc, lon_loc):
+
+def calc_bearing_north_zero(lat_ref: AngleDegrees,
+                            lon_ref: AngleDegrees,
+                            lat_loc: AngleDegrees,
+                            lon_loc: AngleDegrees) -> AngleDegrees:
     """
     Calculate the simple bearing (pythagorean angles)
     :param lat_ref: float
@@ -27,14 +36,17 @@ def calc_bearing_north_zero(lat_ref, lon_ref, lat_loc, lon_loc):
     :param lon_loc: float
     :return: float bearing in degrees (north zero)
     """
-    lon_delta = lon_loc - lon_ref
-    lat_delta = lat_loc - lat_ref
+    lon_delta: AngleDegrees = lon_loc - lon_ref
+    lat_delta: AngleDegrees = lat_loc - lat_ref
 
-    angle_deg = math.degrees(math.atan2(lon_delta, lat_delta))
+    angle_deg: AngleDegrees = math.degrees(math.atan2(lon_delta, lat_delta))
     return (angle_deg + 360) % 360
 
 
-def calc_bearing_great_circle(lat_ref, lon_ref, lat_loc, lon_loc):
+def calc_bearing_great_circle(lat_ref: AngleDegrees,
+                              lon_ref: AngleDegrees,
+                              lat_loc: AngleDegrees,
+                              lon_loc: AngleDegrees) -> AngleDegrees:
     """
     Calculate the great circle bearing
     :param lat_ref: float
@@ -43,36 +55,47 @@ def calc_bearing_great_circle(lat_ref, lon_ref, lat_loc, lon_loc):
     :param lon_loc: float
     :return: float bearing in degrees (north zero deg)
     """
-    y = math.sin(lon_loc - lon_ref) * math.cos(lat_loc)
-    x = math.cos(lat_ref) * math.sin(lat_loc) - math.sin(lat_ref) * math.cos(lat_loc) * math.cos(lon_loc - lon_ref)
-    brng = math.degrees(math.atan2(y, x))
+    y: float = math.sin(lon_loc - lon_ref) * math.cos(lat_loc)
+    x: float = ((math.cos(lat_ref) * math.sin(lat_loc))
+                - (math.sin(lat_ref) * math.cos(lat_loc) * math.cos(lon_loc - lon_ref)))
+    brng: AngleDegrees = math.degrees(math.atan2(y, x))
     return (brng + 360) % 360
 
 
-def interpolate_lat_lon_from_time(start_time, start_lat, start_lon, end_time, end_lat, end_lon, current_time):
-    time_diff = end_time - start_time
-    curr_diff = current_time - start_time
+def interpolate_lat_lon_from_time(start_time: datetime,
+                                  start_lat: AngleDegrees,
+                                  start_lon: AngleDegrees,
+                                  end_time: datetime,
+                                  end_lat: AngleDegrees,
+                                  end_lon: AngleDegrees,
+                                  current_time: datetime) -> Point:
+    time_diff: timedelta = end_time - start_time
+    curr_diff: timedelta = current_time - start_time
 
-    lat_diff = end_lat - start_lat
-    lon_diff = end_lon - start_lon
+    lat_diff: AngleDegrees = end_lat - start_lat
+    lon_diff: AngleDegrees = end_lon - start_lon
 
-    time_frac = curr_diff.total_seconds() / time_diff.total_seconds()
+    time_frac: float = curr_diff.total_seconds() / time_diff.total_seconds()
 
-    ret_lon = start_lon + (lon_diff * time_frac)
-    ret_lat = start_lat + (lat_diff * time_frac)
+    ret_lon: AngleDegrees = start_lon + (lon_diff * time_frac)
+    ret_lat: AngleDegrees = start_lat + (lat_diff * time_frac)
 
     return [ret_lat, ret_lon]
 
 
-def interpolate_vmax_from_time(start_time, start_wind, end_time, end_wind, current_time):
-    time_diff = end_time - start_time
-    curr_diff = current_time - start_time
+def interpolate_vmax_from_time(start_time: datetime,
+                               start_wind: Velocity,
+                               end_time: datetime,
+                               end_wind: Velocity,
+                               current_time: datetime) -> Velocity:
+    time_diff: timedelta = end_time - start_time
+    curr_diff: timedelta = current_time - start_time
 
-    wind_diff = end_wind - start_wind
+    wind_diff: Velocity = end_wind - start_wind
 
-    time_frac = curr_diff.total_seconds() / time_diff.total_seconds()
+    time_frac: float = curr_diff.total_seconds() / time_diff.total_seconds()
 
-    ret_wind = start_wind + (wind_diff * time_frac)
+    ret_wind: Velocity = start_wind + (wind_diff * time_frac)
 
     return ret_wind
 
@@ -86,17 +109,19 @@ class HurdatCatalog:
         """
         Class representing a Hurricane from a hurdat data source
         """
-        hurdat_headers = ["StormID/Date", "Name/Hour", "Rows/SpecialRow", "System Status", "Lat", "Lon",
-                          "Max Wind (kts)", "Min Pressure (mBar)", "R34 NE(Nauts; kts)", "R34 SE (Nauts; kts)",
-                          "R34 SW (Nauts; kts)", "R34 NW (Nauts; kts)", "R50 NE (Nauts; kts)", "R50 SE (Nauts; kts)",
-                          "R50 SW (Nauts; kts)", "R50 NW (Nauts; kts)", "R64 NE (Nauts; kts)", "R64 SE (Nauts; kts)",
-                          "R64 SW (Nauts; kts)", "R64 NW (Nauts; kts)"]
-        df_hurdat_headers = ["storm_id/date", "name/time", "records/record_identifier", "system_status", "lat", "lon",
-                             "max_wind_kts", "min_pressure_mb", "r34_ne_nmi", "r34_se_nmi", "r34_sw_nmi", "r34_nw_nmi",
-                             "r50_ne_nmi", "r500_se_nmi", "r50_sw_nmi", "r50_nw_nmi", "r64_ne_nmi", "r64_se_nmi",
-                             "r64_sw_nmi", "r64_nw_nmi"]
-        model_headers = ["catalog_number", "name", "basin", "timestamp", "lat_y", "lon_x", "max_wind_kts", "min_cp_mb",
-                         "sequence", "fspeed_kts", "is_landfall_point", "heading", "rmax_nmi", "gwaf"]
+        hurdat_headers: List[str] = ["StormID/Date", "Name/Hour", "Rows/SpecialRow", "System Status", "Lat", "Lon",
+                                     "Max Wind (kts)", "Min Pressure (mBar)", "R34 NE(Nauts; kts)",
+                                     "R34 SE (Nauts; kts)", "R34 SW (Nauts; kts)", "R34 NW (Nauts; kts)",
+                                     "R50 NE (Nauts; kts)", "R50 SE (Nauts; kts)", "R50 SW (Nauts; kts)",
+                                     "R50 NW (Nauts; kts)", "R64 NE (Nauts; kts)", "R64 SE (Nauts; kts)",
+                                     "R64 SW (Nauts; kts)", "R64 NW (Nauts; kts)"]
+        df_hurdat_headers: List[str] = ["storm_id/date", "name/time", "records/record_identifier", "system_status",
+                                        "lat", "lon", "max_wind_kts", "min_pressure_mb", "r34_ne_nmi", "r34_se_nmi",
+                                        "r34_sw_nmi", "r34_nw_nmi", "r50_ne_nmi", "r500_se_nmi", "r50_sw_nmi",
+                                        "r50_nw_nmi", "r64_ne_nmi", "r64_se_nmi", "r64_sw_nmi", "r64_nw_nmi"]
+        model_headers: List[str] = ["catalog_number", "name", "basin", "timestamp", "lat_y", "lon_x", "max_wind_kts",
+                                    "min_cp_mb", "sequence", "fspeed_kts", "is_landfall_point", "heading", "rmax_nmi",
+                                    "gwaf"]
 
         unisys_headers = ["NAME", "ADV", "LAT", "LON", "TIME", "WIND", "PR", "STAT"]
 
@@ -108,132 +133,109 @@ class HurdatCatalog:
             Class representing a single track point of a hurdat storm
             """
 
-            def __init__(self, year, month, day, hour, minute, lat_y, lon_x, max_wind_kts, min_pressure_mb, sequence, fspeed_kts
-                         , is_landfall=None, record_identifier=None, status=None, hemisphere_ns=None, hemisphere_ew=None
-                         , r34_ne_nmi=None, r34_se_nmi=None, r34_sw_nmi=None, r34_nw_nmi=None
-                         , r50_ne_nmi=None, r50_se_nmi=None, r50_sw_nmi=None, r50_nw_nmi=None
-                         , r64_ne_nmi=None, r64_se_nmi=None, r64_sw_nmi=None, r64_nw_nmi=None
-                         , interpolated_point=False):
+            def __init__(self, year: int, month: int, day: int, hour: int, minute: int,
+                         lat_y: AngleDegrees, lon_x: AngleDegrees,
+                         max_wind_kts: VelocityKnots, min_pressure_mb: PressureMillibar, sequence: int,
+                         fspeed_kts: VelocityKnots, is_landfall: int = None, record_identifier: str = None,
+                         status: str = None, hemisphere_ns: str = None, hemisphere_ew: str = None,
+                         r34_ne_nmi: int = None, r34_se_nmi: int = None, r34_sw_nmi: int = None, r34_nw_nmi: int = None,
+                         r50_ne_nmi: int = None, r50_se_nmi: int = None, r50_sw_nmi: int = None, r50_nw_nmi: int = None,
+                         r64_ne_nmi: int = None, r64_se_nmi: int = None, r64_sw_nmi: int = None, r64_nw_nmi: int = None,
+                         interpolated_point: bool = False):
                 """
                 Each parameter is a field from the hurdat specification, except the sequence and fspeed
-                :param year: int
-                :param month: int
-                :param day: int
-                :param hour: int
-                :param minute: int
-                :param record_identifier: str
-                :param status: str
-                :param lat_y: float
-                :param hemisphere_ns: str
-                :param lon_x: float
-                :param hemisphere_ew: str
-                :param max_wind_kts: int
-                :param min_pressure_mb: int
-                :param r34_ne_nmi: int
-                :param r34_se_nmi: int
-                :param r34_sw_nmi: int
-                :param r34_nw_nmi: int
-                :param r50_ne_nmi: int
-                :param r50_se_nmi: int
-                :param r50_sw_nmi: int
-                :param r50_nw_nmi: int
-                :param r64_ne_nmi: int
-                :param r64_se_nmi: int
-                :param r64_sw_nmi: int
-                :param r64_nw_nmi: int
-                :param sequence: int
-                :param fspeed_kts: float
                 """
                 # Time
-                self.year = year
-                self.month = month
-                self.day = day
-                self.hour = hour
-                self.minute = minute
-                self.timestamp = datetime.datetime(year, month, day, hour, minute)
+                self.year: int = year
+                self.month: int = month
+                self.day: int = day
+                self.hour: int = hour
+                self.minute: int = minute
+                self.timestamp: datetime = datetime(year, month, day, hour, minute)
 
                 # Identifiers
-                self.record_identifier = record_identifier
-                self.status = status
+                self.record_identifier: str = record_identifier
+                self.status: str = status
 
                 # Position
                 # self.lat_y = lat_y * (-1 if hemisphere_ns == 'S' else 1)
-                self.lat_y = lat_y
-                self.hemisphere_ns = hemisphere_ns
+                self.lat_y: AngleDegrees = lat_y
+                self.hemisphere_ns: str = hemisphere_ns
                 # self.lon_x = lon_x * (-1 if hemisphere_ew == 'W' else 1)
-                self.lon_x = lon_x
-                self.hemisphere_ew = hemisphere_ew
+                self.lon_x: AngleDegrees = lon_x
+                self.hemisphere_ew: str = hemisphere_ew
 
                 # Intensities
-                self.max_wind_kts = max_wind_kts
-                self.min_pressure_mb = min_pressure_mb
+                self.max_wind_kts: VelocityKnots = max_wind_kts
+                self.min_pressure_mb: PressureMillibar = min_pressure_mb
 
                 # Radius of 34kt winds
-                self.r34_ne_nmi = r34_ne_nmi
-                self.r34_se_nmi = r34_se_nmi
-                self.r34_sw_nmi = r34_sw_nmi
-                self.r34_nw_nmi = r34_nw_nmi
+                self.r34_ne_nmi: DistanceNauticalMiles = r34_ne_nmi
+                self.r34_se_nmi: DistanceNauticalMiles = r34_se_nmi
+                self.r34_sw_nmi: DistanceNauticalMiles = r34_sw_nmi
+                self.r34_nw_nmi: DistanceNauticalMiles = r34_nw_nmi
 
                 # Radius of 50kt winds
-                self.r50_ne_nmi = r50_ne_nmi
-                self.r50_se_nmi = r50_se_nmi
-                self.r50_sw_nmi = r50_sw_nmi
-                self.r50_nw_nmi = r50_nw_nmi
+                self.r50_ne_nmi: DistanceNauticalMiles = r50_ne_nmi
+                self.r50_se_nmi: DistanceNauticalMiles = r50_se_nmi
+                self.r50_sw_nmi: DistanceNauticalMiles = r50_sw_nmi
+                self.r50_nw_nmi: DistanceNauticalMiles = r50_nw_nmi
 
                 # Radius of 64kt winds
-                self.r64_ne_nmi = r64_ne_nmi
-                self.r64_se_nmi = r64_se_nmi
-                self.r64_sw_nmi = r64_sw_nmi
-                self.r64_nw_nmi = r64_nw_nmi
+                self.r64_ne_nmi: DistanceNauticalMiles = r64_ne_nmi
+                self.r64_se_nmi: DistanceNauticalMiles = r64_se_nmi
+                self.r64_sw_nmi: DistanceNauticalMiles = r64_sw_nmi
+                self.r64_nw_nmi: DistanceNauticalMiles = r64_nw_nmi
 
-                self.sequence = sequence
-                self.heading_to_next_point = None
-                self.fspeed_kts = fspeed_kts
+                self.sequence: int = sequence
+                self.heading_to_next_point: AngleDegrees = None
+                self.fspeed_kts: VelocityKnots = fspeed_kts
 
+                self.is_landfall: int
                 if is_landfall is None:
                     self.is_landfall = 1 if self.record_identifier == "L" else 0
                 else:
                     self.is_landfall = is_landfall
 
-                self.interpolated_point = interpolated_point
+                self.interpolated_point: bool = interpolated_point
 
-            def point_to_xyz(self):
+            def point_to_xyz(self) -> PointValue:
                 """
                 return the point in a lat, lon, value list format
                 :return: list as [lat, lon, value]
                 """
                 # lat = abs(self.lat_y) * -1 if self.hemisphere_ns == 'S' else abs(self.lat_y)
                 # lon = abs(self.lon_x) * -1 if self.hemisphere_ew == 'W' else abs(self.lon_x)
-                ll = self.point_lat_lon()
-                val = self.max_wind_kts
+                ll: Point = self.point_lat_lon()
+                val: VelocityKnots = self.max_wind_kts
                 return [ll[0], ll[1], val]
 
-            def point_lat_lon(self):
+            def point_lat_lon(self) -> Point:
                 """
                 Get the lat and lon of the point in list format
                 :return: list [lat, lon]
                 """
-                lat = self.lat_y
+                lat: AngleDegrees = self.lat_y
                 if self.hemisphere_ns is not None:
                     lat = abs(lat) * -1 if self.hemisphere_ns == 'S' else abs(lat)
-                lon = self.lon_x
+                lon: AngleDegrees = self.lon_x
                 if self.hemisphere_ew is not None:
                     lon = abs(lon) * -1 if self.hemisphere_ew == 'W' else abs(lon)
                 return [lat, lon]
 
-            def for_geojson_point(self):
+            def for_geojson_point(self) -> GeojsonPoint:
                 """
                 Get the point formatted for geojson
                 :return: list [[lon, lat], value]
                 """
                 # lon = abs(self.lon_x) * -1 if self.hemisphere_ew == 'W' else abs(self.lon_x)
                 # lat = abs(self.lat_y) * -1 if self.hemisphere_ns == 'S' else abs(self.lat_y)
-                ll = self.point_lat_lon()
-                val = self.max_wind_kts
+                ll: Point = self.point_lat_lon()
+                val: AngleDegrees = self.max_wind_kts
                 seq = self.sequence
                 return [[ll[1], ll[0]], val, seq]
 
-            def to_hurdat_list(self):
+            def to_hurdat_list(self) -> List:
                 """
                 Convert the point to a list representation, hurdat format
                 :return: list
@@ -259,13 +261,13 @@ class HurdatCatalog:
                         , self.r64_sw_nmi
                         , self.r64_nw_nmi]
 
-            def to_model_list(self):
+            def to_model_list(self) -> List:
                 """
                 Convert the point to a list representation, model format
                 :return: list
                 """
 
-                ll = self.point_lat_lon()
+                ll: Point = self.point_lat_lon()
                 return [self.timestamp.strftime("%Y-%m-%d-%H-%M")
                         , ll[0]
                         , ll[1]
@@ -276,7 +278,11 @@ class HurdatCatalog:
                         , self.is_landfall
                         , self.heading_to_next_point]
 
-        def __init__(self, hurdat_storm_data=None, fspeed_kts=15, rmax_nmi=15, gwaf=0.9):
+        def __init__(self,
+                     hurdat_storm_data: List[List] = None,
+                     fspeed_kts: VelocityKnots = 15,
+                     rmax_nmi: DistanceNauticalMiles = 15,
+                     gwaf: float = 0.9):
             """
             Storm initializer function.  If storm_data is provided, the storm data is parsed.  Otherwise, and empty storm is created
             :param hurdat_storm_data: list of list
@@ -284,21 +290,21 @@ class HurdatCatalog:
             :param rmax_nmi: int
             :param gwaf: float
             """
-            self.storm_data = hurdat_storm_data
+            self.storm_data: List[List] = hurdat_storm_data
             self.source_data = None
-            self.fspeed_kts = fspeed_kts
-            self.rmax_nmi = rmax_nmi
-            self.gwaf = gwaf
-            self.basin = None
-            self.catalog_number = None
-            self.year = None
-            self.name = None
-            self.track_point_count = None
-            self.track_points = []
+            self.fspeed_kts: VelocityKnots = fspeed_kts
+            self.rmax_nmi: DistanceNauticalMiles = rmax_nmi
+            self.gwaf: float = gwaf
+            self.basin: str = None
+            self.catalog_number: int = None
+            self.year: int = None
+            self.name: str = None
+            self.track_point_count: int = None
+            self.track_points: list[HurdatCatalog.HurdatStormSystem.HurdatTrackPoint] = []
             self.lat_lon_grid = None
             self.result_array = None
-            self.px_per_degree = 10
-            self.max_calc_dist = 360
+            self.px_per_degree: int = 10
+            self.max_calc_dist: float = 360
 
             self.unique_name = ''
             self.fspeed_from_points = False
@@ -311,7 +317,7 @@ class HurdatCatalog:
                 self.parse_hurdat_storm_data(hurdat_storm_data)
                 self.data_source_type = 'hurdat'
 
-        def parse_hurdat_storm_data(self, hurdat_storm_data):
+        def parse_hurdat_storm_data(self, hurdat_storm_data: List[List]):
             """
             Parse a storm_data input into a track.  Passed list is not altered
             :param hurdat_storm_data: list of lists
@@ -529,7 +535,7 @@ class HurdatCatalog:
                                       , r64_ne_nmi, r64_se_nmi, r64_sw_nmi, r64_nw_nmi))
 
         def parse_model_data_row(self, row):
-            timestamp = datetime.datetime.strptime(row[3], "%Y-%m-%d-%H-%M")
+            timestamp = datetime.strptime(row[3], "%Y-%m-%d-%H-%M")
             lat_y = row[4]
             lon_x = row[5]
             max_wind = row[6]
@@ -636,14 +642,18 @@ class HurdatCatalog:
 
             self.track_points.append(self.HurdatTrackPoint(timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, lat_y, lon_x, max_wind, min_cp, seq, None, None, record_identifier=adv, status=stat))
 
-        def time_interpolate_track_points(self, time_step=None, fspeed=True, heading=True, verbose=False):
+        def time_interpolate_track_points(self
+                                          , time_step=None
+                                          , fspeed=True
+                                          , heading=True
+                                          , verbose=False):
             """
             Interpolates track to at least the interval given
             :param time_step: timedelta default 1hr
             :return:
             """
             if time_step is None:
-                time_step = datetime.timedelta(hours=1)
+                time_step = timedelta(hours=1)
 
             temp_tps = [self.track_points[0]]
             for pos in range(self.track_point_count-1):
@@ -753,63 +763,63 @@ class HurdatCatalog:
 
         def track_to_json(self):
             return list(map((lambda x: {"catalogNumber": self.catalog_number, "stormName": self.name, "basin": self.basin, "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"), "eyeLat_y": x.point_lat_lon()[0], "eyeLon_x": x.point_lat_lon()[1], "maxWind_kts": None if math.isnan(x.max_wind_kts) else x.max_wind_kts, "minCp_mb": None if math.isnan(x.min_pressure_mb) else x.min_pressure_mb, "sequence": x.sequence, "fSpeed_kts": x.fspeed_kts, "isLandfallPoint": bool(x.is_landfall), "rMax_nmi": self.rmax_nmi, "gwaf": self.gwaf, "heading": x.heading_to_next_point}), self.track_points))
-
-        def calculate_grid_scala(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
-            calc_method = 'nws23'
-            # Send event to scala
-            formData = {}
-            formData = self.track_to_json()
-
-            formDict = {"track": formData}
-            formDict['BBox'] = {}
-            formDict['BBox']['topLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.top_lat_y
-            formDict['BBox']['botLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.bot_lat_y
-            formDict['BBox']['leftLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.left_lon_x
-            formDict['BBox']['rightLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.right_lon_x
-            formDict['BBox']['pxPerDegreeX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.block_per_degree_x
-            formDict['BBox']['pxPerDegreeY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.block_per_degree_y
-
-            formDict['rmax'] = gb.flapy_app.hurricane_catalog.current_storm.rmax_nmi
-            formDict['fspeed'] = None if auto_fspeed else gb.flapy_app.hurricane_catalog.current_storm.fspeed_kts
-            formDict['par'] = num_parallel if do_parallel else -1
-            formDict['maxDist'] = self.max_calc_dist
-            formDict['call_id'] = self.unique_name
-
-            # send request
-            host = gb.GlobalConfig.get('ScalaServer', 'host')
-            port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
-            scala_url = "http://{0}:{1}/calculate/hurricane/{2}".format(host, port, calc_method)
-            # r = requests.get("http://192.168.88.28:9001/calculate/hurricane/nws23", json = formDict)
-            # r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
-            r = requests.get(scala_url, json = formDict)
-            
-            footprintImage = Image.open(BytesIO(r.content))
-
-            # Build event data from scala image file, as a byproduct saves the event to disk completely
-            self.raster_bands = 4
-            self.raster_output_band = 1
-            # base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
-            base_uri = os.path.join(gb.USER_FOLDER, 'events', 'hurricane')
-            base_name = self.unique_name
-            
-            # save_name += "_" + "scala_temp"
-            #self.unique_name = base_name
-
-            raster_uri = os.path.join(base_uri, base_name + ".png")
-
-            ini_uri = self.save_event_ini(base_uri, base_name)
-
-            self.save_base_data(base_uri, base_name)
-
-            # copy image from scala land to python land.  Assumes running on the same server with acess to both server directories
-            # shutil.copy2(r.json()['imageUri'], raster_uri)
-            footprintImage.save(raster_uri)
-
-            # set current event what's read from 
-            self.parse_from_saved_event(ini_uri)
-
-            print(r.status_code)
-            # print(r.json()['imageUri'])
+        # Depends on globals
+        # def calculate_grid_scala(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
+        #     calc_method = 'nws23'
+        #     # Send event to scala
+        #     formData = {}
+        #     formData = self.track_to_json()
+        #
+        #     formDict = {"track": formData}
+        #     formDict['BBox'] = {}
+        #     formDict['BBox']['topLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.top_lat_y
+        #     formDict['BBox']['botLatY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.bot_lat_y
+        #     formDict['BBox']['leftLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.left_lon_x
+        #     formDict['BBox']['rightLonX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.right_lon_x
+        #     formDict['BBox']['pxPerDegreeX'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.block_per_degree_x
+        #     formDict['BBox']['pxPerDegreeY'] = gb.flapy_app.hurricane_catalog.current_storm.lat_lon_grid.block_per_degree_y
+        #
+        #     formDict['rmax'] = gb.flapy_app.hurricane_catalog.current_storm.rmax_nmi
+        #     formDict['fspeed'] = None if auto_fspeed else gb.flapy_app.hurricane_catalog.current_storm.fspeed_kts
+        #     formDict['par'] = num_parallel if do_parallel else -1
+        #     formDict['maxDist'] = self.max_calc_dist
+        #     formDict['call_id'] = self.unique_name
+        #
+        #     # send request
+        #     host = gb.GlobalConfig.get('ScalaServer', 'host')
+        #     port = int(gb.GlobalConfig.get('ScalaServer', 'port'))
+        #     scala_url = "http://{0}:{1}/calculate/hurricane/{2}".format(host, port, calc_method)
+        #     # r = requests.get("http://192.168.88.28:9001/calculate/hurricane/nws23", json = formDict)
+        #     # r = requests.get("http://localhost:9001/calculate/hurricane/nws23", json = formDict)
+        #     r = requests.get(scala_url, json = formDict)
+        #
+        #     footprintImage = Image.open(BytesIO(r.content))
+        #
+        #     # Build event data from scala image file, as a byproduct saves the event to disk completely
+        #     self.raster_bands = 4
+        #     self.raster_output_band = 1
+        #     # base_uri = gb.USER_FOLDER # app.config.get('USER_FOLDER')
+        #     base_uri = os.path.join(gb.USER_FOLDER, 'events', 'hurricane')
+        #     base_name = self.unique_name
+        #
+        #     # save_name += "_" + "scala_temp"
+        #     #self.unique_name = base_name
+        #
+        #     raster_uri = os.path.join(base_uri, base_name + ".png")
+        #
+        #     ini_uri = self.save_event_ini(base_uri, base_name)
+        #
+        #     self.save_base_data(base_uri, base_name)
+        #
+        #     # copy image from scala land to python land.  Assumes running on the same server with acess to both server directories
+        #     # shutil.copy2(r.json()['imageUri'], raster_uri)
+        #     footprintImage.save(raster_uri)
+        #
+        #     # set current event what's read from
+        #     self.parse_from_saved_event(ini_uri)
+        #
+        #     print(r.status_code)
+        #     # print(r.json()['imageUri'])
 
         def calculate_grid_python(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
             """
@@ -924,12 +934,13 @@ class HurdatCatalog:
                 base_name += "_" + event_suffix
             self.unique_name = base_name
             raster_uri = os.path.join(base_uri, base_name + ".png")
-            static_image_file_uri = os.path.join(gb.STATIC_FOLDER, 'images', 'tmp/', base_name + ".png")
+            # Depends on globals
+            # static_image_file_uri = os.path.join(gb.STATIC_FOLDER, 'images', 'tmp/', base_name + ".png")
 
             self.save_event_raster(raster_uri, raster_bands, raster_output_band)
 
             # copy image to static folder for display, feels bad
-            shutil.copy2(raster_uri, static_image_file_uri)
+            # shutil.copy2(raster_uri, static_image_file_uri)
 
             # ini_uri = base_uri + self.unique_name + "_" + event_suffix + ".ini"
             self.save_event_ini(base_uri, base_name)
@@ -996,7 +1007,8 @@ class HurdatCatalog:
 
             ini_uri = os.path.join(base_uri, name + ".ini")
 
-            gb.save_config(config_file, ini_uri)
+            # DEpends on globals
+            # gb.save_config(config_file, ini_uri)
 
             return ini_uri
 
@@ -1021,7 +1033,7 @@ class HurdatCatalog:
         Initialize a hurdat catalog from hurdat data file
         :param catalog_file_uri: str uri
         """
-        self.catalog_file_uri = catalog_file_uri
+        self.catalog_file_uri: Path = catalog_file_uri
         self.storm_catalog = []
         self.storm_data = None
         self.current_storm = self.HurdatStormSystem()

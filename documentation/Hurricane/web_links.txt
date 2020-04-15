@@ -1,0 +1,3 @@
+Logistic regression calculator: https://www.desmos.com/calculator/naf1qogfjn
+Web plot Digitizer: http://arohatgi.info/WebPlotDigitizer/app/
+Coriolis Frequency: http://www.mt-oceanography.info/Utilities/coriolis.html
