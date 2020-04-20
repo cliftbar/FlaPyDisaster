@@ -1,13 +1,21 @@
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, List
 
 from pymongo import MongoClient
 from pymongo.database import Database
-from pymongo.results import InsertOneResult
+from pymongo.results import InsertOneResult, UpdateResult
+
+from flapy_disaster.utilities.ConfigurationContainers import MongoConfiguration, Configurations
+from flapy_disaster.utilities.ConfigurationLoader import ConfigurationLoader
+from flapy_disaster.utilities.flapy_types import JSON
+
+from flapy_disaster.app import flapy_app, config_loader_key
 
 
 class MongoInterface:
-    def __init__(self, host: str = "localhost", port: int = 27017):
-        self.client: MongoClient = MongoClient(host, port)
+    def __init__(self):
+        config: ConfigurationLoader = flapy_app.config[config_loader_key]
+        mongo_config: MongoConfiguration = MongoConfiguration(config.get_config(Configurations.mongo))
+        self.client: MongoClient = MongoClient(mongo_config.mongo_host, mongo_config.mongo_port)
 
     def create_db(self, database: str) -> Database:
         db: Database = self.client[database]
@@ -18,7 +26,22 @@ class MongoInterface:
         result: InsertOneResult = db[table].insert_one(document)
         return result.inserted_id
 
-    def find_one_document(self, database: str, table: str, find_filter: Dict) -> Dict:
+    def upsert_document(self, database: str, table: str, match_filter: JSON, document: Dict) -> int:
+        db: Database = self.client[database]
+        result: UpdateResult = db[table].replace_one(match_filter, document, upsert=True)
+        return result.modified_count
+
+    def find_document(self, database: str, table: str, find_filter: Dict) -> Dict:
         db: Database = self.client[database]
         result: Optional[Any] = db[table].find_one(find_filter)
+        return result
+
+    def find_documents(self, database: str, table: str, find_filter: Dict) -> List[JSON]:
+        db: Database = self.client[database]
+        result: List[JSON] = db[table].find(find_filter)
+        return result
+
+    def get_collection_field(self, database: str, table: str, field_key: str) -> List[Any]:
+        db: Database = self.client[database]
+        result: List[JSON] = db[table].distinct(field_key)
         return result

@@ -1,0 +1,2 @@
+host: "${mongo_host}"
+port: ${mongo_port}

@@ -1,8 +1,10 @@
 ﻿from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Any
+from typing import List, Any, Dict
 
 import pandas as pd
+import pytz
+
 import flapy_disaster.services.mapping.leaflet_map as lm
 import copy
 import math
@@ -20,8 +22,12 @@ from PIL import Image
 from io import BytesIO
 import os
 
+from flapy_disaster.services.hurricane.HurricaneCatalog import HurricaneTrackPoint
 from flapy_disaster.utilities.flapy_types import AngleDegrees, Point, Velocity, DistanceNauticalMiles, PressureMillibar, \
     VelocityKnots, PointValue, GeojsonPoint
+from flapy_disaster.utilities.general_utils import FDEnum
+
+
 
 
 def calc_bearing_north_zero(lat_ref: AngleDegrees,
@@ -128,10 +134,32 @@ class HurdatCatalog:
         hurdat_wind_no_data = -99
         hurdat_no_data = -999
 
+        class ModelFields(FDEnum):
+            catalog_id = "catalog_id"
+            name = "name"
+            year = "year"
+            unique_id = "unique_id"
+            basin = "basin"
+            rmax_nmi = "rmax_nmi"
+            track_points = "track_points"
+
         class HurdatTrackPoint:
             """
             Class representing a single track point of a hurdat storm
             """
+
+            class ModelHeaders(FDEnum):
+                timestamp = "timestamp"
+                sequence = "sequence"
+                lat_y = "lat_y"
+                lon_x = "lon_x"
+                heading = "heading"
+                max_wind_kts = "max_wind_kts"
+                min_cp_mb = "min_cp_mb"
+                fspeed_kts = "fspeed_kts"
+                rmax_nmi = "rmax_nmi"
+                gwaf = "gwaf"
+                is_landfall_point = "is_landfall_point"
 
             def __init__(self, year: int, month: int, day: int, hour: int, minute: int,
                          lat_y: AngleDegrees, lon_x: AngleDegrees,
@@ -151,7 +179,7 @@ class HurdatCatalog:
                 self.day: int = day
                 self.hour: int = hour
                 self.minute: int = minute
-                self.timestamp: datetime = datetime(year, month, day, hour, minute)
+                self.timestamp: datetime = datetime(year, month, day, hour, minute, tzinfo=pytz.utc)
 
                 # Identifiers
                 self.record_identifier: str = record_identifier
@@ -277,6 +305,49 @@ class HurdatCatalog:
                         , self.fspeed_kts
                         , self.is_landfall
                         , self.heading_to_next_point]
+
+            def to_model_json(self) -> Dict:
+                ret_json: Dict = {
+                    self.ModelHeaders.timestamp.value: self.timestamp.isoformat(),
+                    self.ModelHeaders.sequence.value: self.sequence,
+                    self.ModelHeaders.lat_y.value: self.lat_y,
+                    self.ModelHeaders.lon_x.value: self.lon_x,
+                    self.ModelHeaders.heading.value: self.heading_to_next_point,
+                    self.ModelHeaders.max_wind_kts.value: self.max_wind_kts,
+                    self.ModelHeaders.min_cp_mb.value: None if self.min_pressure_mb is math.nan else self.min_pressure_mb,
+                    self.ModelHeaders.fspeed_kts.value: self.fspeed_kts,
+                    self.ModelHeaders.is_landfall_point.value: True if self.is_landfall == 1 else False
+                }
+
+                return ret_json
+
+            def from_model_json(self, tp_json: Dict) -> "HurdatCatalog.HurdatStormSystem.HurdatTrackPoint":
+                timestamp: datetime = datetime.fromisoformat(tp_json[self.ModelHeaders.timestamp.value])
+                lat_y: AngleDegrees = tp_json[self.ModelHeaders.lat_y.value]
+                lon_x: AngleDegrees = tp_json[self.ModelHeaders.lon_x.value]
+                max_wind: VelocityKnots = tp_json[self.ModelHeaders.max_wind_kts.value]
+                min_cp: PressureMillibar = tp_json[self.ModelHeaders.min_cp_mb.value]
+                min_cp = math.nan if min_cp is None else min_cp
+
+                seq: int = tp_json[self.ModelHeaders.sequence.value]
+                fspeed: VelocityKnots = tp_json[self.ModelHeaders.fspeed_kts.value]
+                is_landfall: bool = tp_json[self.ModelHeaders.is_landfall_point.value]
+                is_landfall: int = 1 if is_landfall else 0
+
+                ret_point = HurdatCatalog.HurdatStormSystem.HurdatTrackPoint(timestamp.year,
+                                                                             timestamp.month,
+                                                                             timestamp.day,
+                                                                             timestamp.hour,
+                                                                             timestamp.minute,
+                                                                             lat_y,
+                                                                             lon_x,
+                                                                             max_wind,
+                                                                             min_cp,
+                                                                             seq,
+                                                                             fspeed,
+                                                                             is_landfall)
+
+                return ret_point
 
         def __init__(self,
                      hurdat_storm_data: List[List] = None,
@@ -411,19 +482,20 @@ class HurdatCatalog:
             """
             if len(self.track_points) == 1:
                 self.track_points[0].fspeed_kts = 0
-            for i in range(len(self.track_points)-1, -1, -1):
-                if i == 0:
-                    self.track_points[i].fspeed_kts = self.track_points[i+1].fspeed_kts
-                    continue
+            else:
+                for i in range(len(self.track_points)-1, -1, -1):
+                    if i == 0:
+                        self.track_points[i].fspeed_kts = self.track_points[i+1].fspeed_kts
+                        continue
 
-                next_lat_lng = self.track_points[i-1].point_lat_lon()
-                curr_lat_lng = self.track_points[i].point_lat_lon()
-                distance = genu.haversine_degrees_to_meters(curr_lat_lng[0], curr_lat_lng[1], next_lat_lng[0], next_lat_lng[1]) / 1000 * 0.539957
-                time = (self.track_points[i].timestamp - self.track_points[i-1].timestamp).total_seconds() / 3600
-                if time == 0:
-                    self.track_points[i].fspeed_kts = self.track_points[i+1].fspeed_kts
-                else:
-                    self.track_points[i].fspeed_kts = distance / time
+                    next_lat_lng = self.track_points[i-1].point_lat_lon()
+                    curr_lat_lng = self.track_points[i].point_lat_lon()
+                    distance = genu.haversine_degrees_to_meters(curr_lat_lng[0], curr_lat_lng[1], next_lat_lng[0], next_lat_lng[1]) / 1000 * 0.539957
+                    time = (self.track_points[i].timestamp - self.track_points[i-1].timestamp).total_seconds() / 3600
+                    if time == 0:
+                        self.track_points[i].fspeed_kts = self.track_points[i+1].fspeed_kts
+                    else:
+                        self.track_points[i].fspeed_kts = distance / time
 
             self.fspeed_from_points = True
 
@@ -762,7 +834,34 @@ class HurdatCatalog:
             return geojson_collection
 
         def track_to_json(self):
-            return list(map((lambda x: {"catalogNumber": self.catalog_number, "stormName": self.name, "basin": self.basin, "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"), "eyeLat_y": x.point_lat_lon()[0], "eyeLon_x": x.point_lat_lon()[1], "maxWind_kts": None if math.isnan(x.max_wind_kts) else x.max_wind_kts, "minCp_mb": None if math.isnan(x.min_pressure_mb) else x.min_pressure_mb, "sequence": x.sequence, "fSpeed_kts": x.fspeed_kts, "isLandfallPoint": bool(x.is_landfall), "rMax_nmi": self.rmax_nmi, "gwaf": self.gwaf, "heading": x.heading_to_next_point}), self.track_points))
+            return list(map((lambda x: {"catalogNumber": self.catalog_number,
+                                        "stormName": self.name,
+                                        "basin": self.basin,
+                                        "timestamp": x.timestamp.strftime("%Y-%m-%d-%H-%M"),
+                                        "eyeLat_y": x.point_lat_lon()[0],
+                                        "eyeLon_x": x.point_lat_lon()[1],
+                                        "maxWind_kts": None if math.isnan(x.max_wind_kts) else x.max_wind_kts,
+                                        "minCp_mb": None if math.isnan(x.min_pressure_mb) else x.min_pressure_mb,
+                                        "sequence": x.sequence,
+                                        "fSpeed_kts": x.fspeed_kts,
+                                        "isLandfallPoint": bool(x.is_landfall),
+                                        "rMax_nmi": self.rmax_nmi,
+                                        "gwaf": self.gwaf,
+                                        "heading": x.heading_to_next_point}), self.track_points))
+
+        def to_model_json(self):
+            track_json: List[Dict] = [tp.to_model_json() for tp in self.track_points]
+
+            ret_json: Dict = {
+                self.ModelFields.catalog_id.value: self.catalog_number,
+                self.ModelFields.name.value: self.name,
+                self.ModelFields.year.value: self.year,
+                self.ModelFields.unique_id.value: self.unique_name,
+                self.ModelFields.basin.value: self.basin,
+                self.ModelFields.rmax_nmi.value: self.rmax_nmi,
+                self.ModelFields.track_points.value: track_json
+            }
+            return ret_json
         # Depends on globals
         # def calculate_grid_scala(self, px_per_deg_x, px_per_deg_y, fspeed_kts, rmax_nmi=None, bbox=None, do_parallel=False, num_parallel=None, auto_fspeed=False, force_recalc=False):
         #     calc_method = 'nws23'
@@ -1034,7 +1133,7 @@ class HurdatCatalog:
         :param catalog_file_uri: str uri
         """
         self.catalog_file_uri: Path = catalog_file_uri
-        self.storm_catalog = []
+        self.storm_catalog: List[HurdatCatalog.HurdatStormSystem] = []
         self.storm_data = None
         self.current_storm = self.HurdatStormSystem()
 
@@ -1073,7 +1172,7 @@ class HurdatCatalog:
                     seq += 1
                     catalog_iter += 1
             storm_temp.calc_trackpoint_heading()
-            storm_temp.time_interpolate_track_points(fspeed=False, heading=False)
+            storm_temp.time_interpolate_track_points(fspeed=True, heading=True)
             self.storm_catalog.append(storm_temp)
 
     def get_names(self):
@@ -1104,3 +1203,16 @@ class HurdatCatalog:
         self.storm_catalog.append(curr_storm)
         print(curr_storm.unique_name)
     pass
+
+
+def old_to_new_tp(tp: HurdatCatalog.HurdatStormSystem.HurdatTrackPoint) -> HurricaneTrackPoint:
+    return HurricaneTrackPoint(tp.timestamp,
+                               tp.sequence,
+                               tp.lat_y,
+                               tp.lon_x,
+                               tp.heading_to_next_point,
+                               tp.max_wind_kts,
+                               tp.min_pressure_mb,
+                               tp.fspeed_kts,
+                               (True if tp.is_landfall else False),
+                               (not tp.interpolated_point))

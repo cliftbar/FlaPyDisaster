@@ -275,3 +275,4 @@ __pycache__
 
 !/FlaPyDisaster/static/images/*
 /FlaPyDisaster/static/images/tmp/*.png
+/secrets/*.yml
