@@ -15,7 +15,7 @@ class MongoInterface:
     def __init__(self):
         config: ConfigurationLoader = flapy_app.config[config_loader_key]
         mongo_config: MongoConfiguration = MongoConfiguration(config.get_config(Configurations.mongo))
-        self.client: MongoClient = MongoClient(mongo_config.mongo_host, mongo_config.mongo_port)
+        self.client: MongoClient = MongoClient(mongo_config.host, mongo_config.port)
 
     def create_db(self, database: str) -> Database:
         db: Database = self.client[database]

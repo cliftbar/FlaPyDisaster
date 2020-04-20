@@ -1,7 +1,10 @@
+from marshmallow import missing
+from typing import Dict
+
 from autoapi.autoapi import AutoAPI
 from webargs.flaskparser import parser, abort
 
-from flask import Flask
+from flask import Flask, Request
 from flask_restful import Api
 from flask_cors import CORS
 
@@ -10,6 +13,9 @@ from autoapi.registration import app_registration
 # logging config
 
 # Flask app
+from webargs.multidictproxy import MultiDictProxy
+from werkzeug.datastructures import MultiDict
+
 from flapy_disaster.utilities.ConfigurationContainers import AppConfigContainer, Configurations
 from flapy_disaster.utilities.ConfigurationLoader import ConfigurationLoader
 
@@ -41,6 +47,17 @@ def handle_request_parsing_error(err, req, schema, *, error_status_code, error_h
     abort(error_status_code, errors=err.messages)
 
 
+# Custom location to allow both query params and json.  query params overrides json
+# May be reliant on werkzeug
+@parser.location_loader("query_and_json")
+def load_query_and_json(request, schema):
+    newdata: MultiDict = request.args.copy()
+    json_data: Dict = parser.load_json(request, schema)
+    if json_data is not missing:
+        newdata.update(json_data)
+    return MultiDictProxy(newdata, schema)
+
+
 # Register routes
 api_version: str = "v1"
 prefix: str
@@ -58,6 +75,10 @@ api.add_resource(v1.hurricane.HurricaneEventEndpoint,
                  endpoint=f"HurricaneCatalogEvent_{prefix}_{api_version}")
 
 # Catalogs
+api.add_resource(v1.hurricane.HurricaneCatalog,
+                 f"/{api_version}/{prefix}/catalog",
+                 endpoint=f"HurricaneCatalog_{prefix}_{api_version}")
+
 api.add_resource(v1.hurricane.HurricaneCatalogs,
                  f"/{api_version}/{prefix}/catalogs",
                  endpoint=f"HurricaneCatalogs_{prefix}_{api_version}")

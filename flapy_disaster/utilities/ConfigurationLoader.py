@@ -23,14 +23,14 @@ class ConfigurationLoader:
         if not self.secrets_file.exists():
             raise FileNotFoundError(f"secret file {self.secrets_file} does not exist")
 
-        self._secrets_source: Dict = yaml.load(self.secrets_file.read_text())
+        self._secrets_source: Dict = yaml.load(self.secrets_file.read_text(), Loader=yaml.SafeLoader)
 
         configuration_dict: Dict[str, Any] = {}
         for configuration in self.config_directory.rglob('*.yml'):
             config_text: str = configuration.read_text()
             for key, value in self._secrets_source.items():
                 config_text = config_text.replace(f"${{{key}}}", str(value))
-            config: Union[Union[Dict[Hashable, Any], List[Any]], Any] = yaml.load(config_text)
+            config: Union[Union[Dict[Hashable, Any], List[Any]], Any] = yaml.load(config_text, Loader=yaml.SafeLoader)
             configuration_dict[configuration.stem] = config
 
         self._config_source = configuration_dict

@@ -53,13 +53,13 @@ class AWSConfiguration(Configuration):
 class MongoConfiguration(Configuration):
     def __init__(self, configuration_data: Dict):
         super().__init__(configuration_data)
-        self.mongo_host: str = configuration_data["mongo_host"]
-        self.mongo_port: str = configuration_data["mongo_port"]
+        self.host: str = configuration_data["host"]
+        self.port: str = configuration_data["port"]
 
     def _validate(self, configuration_data: Dict) -> bool:
         class _MongoSchema(Schema):
-            mongo_host = fields.String(required=True)
-            mongo_port = fields.String(required=True)
+            host = fields.String(required=True)
+            port = fields.Integer(required=True)
 
         return self._run_validate(_MongoSchema, configuration_data)
 

@@ -1,2 +1,2 @@
-from .event import HurricaneEvent, HurricaneEventEndpoint, HurricaneEventRender, HurricaneEventsRenders
-from .catalog import HurricaneCatalogs, HurricaneCatalogHurdat
+from .event import HurricaneEventEndpoint, HurricaneEventRender, HurricaneEventsRenders
+from .catalog import HurricaneCatalogs, HurricaneCatalogHurdat, HurricaneCatalog

@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any, List
 
-from autoapi.decorators import introspection
+from autoapi.decorators import autodoc
 from autoapi.responses.value import JSONResponse
 from flask_restful import Resource
 
@@ -17,13 +17,13 @@ logger: logging.Logger = logging.getLogger(__name__)
 
 class HurricaneEventEndpoint(Resource):
     get_args = {
-        "event_id": fields.String(required=True)
+        "event_id": fields.String(required=True, description="Hurricane Event ID")
     }
 
-    @introspection(get_args,
-                   summary="Get Hurricane Event",
-                   description="Get the JSON representation of a Hurricane Event")
-    @use_kwargs(get_args)
+    @autodoc(get_args,
+             summary="Get Hurricane Event",
+             description="Get the JSON representation of a Hurricane Event")
+    @use_kwargs(get_args, location="query_and_json")
     def get(self, event_id: str) -> JSON:
         hurricane_service: HurricaneService = HurricaneService()
         event: HurricaneEvent = hurricane_service.get_event(event_id)
@@ -42,14 +42,14 @@ class HurricaneEventRender(Resource):
         "render_id": fields.String(required=True)
     }
 
-    @use_kwargs(get_args)
+    @use_kwargs(get_args, location="query_and_json")
     def get(self, render_id: str): pass
 
     post_args: Dict[str, fields.Field] = {
         "render_args": fields.Field(required=True)
     }
 
-    @use_kwargs(post_args)
+    @use_kwargs(post_args, location="query_and_json")
     def post(self, render_args: Any) -> str: pass
 
     def delete(self): pass
@@ -61,13 +61,14 @@ class HurricaneEventsRenders(Resource):
     get_args: Dict[str, fields.Field] = {
         "catalog_id": fields.String(required=False)
     }
+    @use_kwargs(get_args, location="query_and_json")
     def get(self, catalog_id: str = None) -> List[str]: pass
 
     post_args: Dict[str, fields.Field] = {
         "render_id": fields.Field(required=True)
     }
 
-    @use_kwargs(post_args)
+    @use_kwargs(post_args, location="query_and_json")
     def post(self, render_args: List[Any]): pass
 
     def delete(self): pass
