@@ -1,14 +1,16 @@
+from pathlib import Path
+
 from marshmallow import missing
 from typing import Dict
 
 from autoapi.autoapi import AutoAPI
 from webargs.flaskparser import parser, abort
 
-from flask import Flask, Request
+from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
 
-from autoapi.registration import app_registration
+from autoapi.registration import AutoAPIApp
 
 # logging config
 
@@ -19,7 +21,7 @@ from werkzeug.datastructures import MultiDict
 from flapy_disaster.utilities.ConfigurationContainers import AppConfigContainer, Configurations
 from flapy_disaster.utilities.ConfigurationLoader import ConfigurationLoader
 
-flapy_app = Flask(__name__)
+flapy_app = Flask(__name__, static_url_path="", static_folder=str(Path(Path.cwd(), "web", "static")))
 
 config_loader_key: str = "fd_config"
 config: ConfigurationLoader = ConfigurationLoader()
@@ -29,15 +31,16 @@ flapy_app.config[config_loader_key] = config
 from flapy_disaster.endpoints import v1
 
 api = Api(flapy_app)
-flapy_app.config['ERROR_404_HELP'] = False
 CORS(flapy_app, resources={r"/v1/*": {"origins": "*"}})
 
 app_config: AppConfigContainer = AppConfigContainer(
     config.get_config(Configurations.app_config)
 )
-spec: AutoAPI = app_registration(api, app_config.title, app_config.version, app_config.openapi_version)
+spec: AutoAPIApp = AutoAPIApp(api, app_config.title, app_config.app_version, app_config.openapi_version)
 
 
+# Flask-RESTful setup
+flapy_app.config['ERROR_404_HELP'] = False
 # This error handler is necessary for usage with Flask-RESTful
 @parser.error_handler
 def handle_request_parsing_error(err, req, schema, *, error_status_code, error_headers):
@@ -61,6 +64,16 @@ def load_query_and_json(request, schema):
 # Register routes
 api_version: str = "v1"
 prefix: str
+
+# Static Index
+api.add_resource(v1.web.StaticWebFiles,
+                 f"/",
+                 endpoint=f"StaticWebFiles")
+
+api.add_resource(v1.web.StaticWebFiles,
+                 f"/{api_version}",
+                 endpoint=f"StaticWebFiles_{api_version}")
+
 
 # Status
 prefix = "status"

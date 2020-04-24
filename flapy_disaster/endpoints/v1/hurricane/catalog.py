@@ -53,8 +53,7 @@ class HurricaneCatalogHurdat(Resource):
     def get(self): pass
 
     post_args: Dict[str, fields.Field] = {
-        "catalog_unique_name": fields.String(required=True),
-        "hurdat_catalog_filename": fields.String(required=False)
+        "catalog_unique_name": fields.String(required=True)
     }
 
     @autodoc(post_args,

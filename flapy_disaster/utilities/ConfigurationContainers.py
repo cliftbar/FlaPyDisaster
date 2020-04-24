@@ -69,13 +69,13 @@ class AppConfigContainer(Configuration):
         super().__init__(configuration_data)
 
         self.title: str = configuration_data["title"]
-        self.version: str = configuration_data["version"]
+        self.app_version: str = configuration_data["app_version"]
         self.openapi_version: str = configuration_data["openapi_version"]
 
     def _validate(self, configuration_data: Dict) -> bool:
         class _AppConfigSchema(Schema):
             title = fields.String(required=True)
-            version = fields.String(required=True)
+            app_version = fields.String(required=True)
             openapi_version = fields.String(required=True)
 
         return self._run_validate(_AppConfigSchema, configuration_data)

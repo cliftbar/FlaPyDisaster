@@ -2,7 +2,6 @@ import logging
 from typing import Dict, Any, List
 
 from autoapi.decorators import autodoc
-from autoapi.responses.value import JSONResponse
 from flask_restful import Resource
 
 from webargs import fields
