@@ -1,4 +1,7 @@
-﻿class BoundingBox:
+﻿from flapy_disaster.utilities.flapy_types import AngleDegrees
+
+
+class BoundingBox:
     """
     Class to represent a bounding box.  Contians a Top and Bottom Latitude, and a Left and Right Longitude.
     Also contains some methods for describing the Bounding Box, such as a get width and height function.
@@ -52,7 +55,13 @@ class LatLonGrid(BoundingBox):
     :method get_block_height: Get the block height in degrees (all blocks are the same height)
     """
 
-    def __init__(self, top_lat_y, bot_lat_y, left_lon_x, right_lon_x, block_per_degree_x, block_per_degree_y):
+    def __init__(self,
+                 top_lat_y: AngleDegrees,
+                 bot_lat_y: AngleDegrees,
+                 left_lon_x: AngleDegrees,
+                 right_lon_x: AngleDegrees,
+                 block_per_degree_x: int,
+                 block_per_degree_y: int):
         """
         Initializer for a LatLon grid class
         :param top_lat_y: float deg
@@ -132,3 +141,12 @@ class LatLonGrid(BoundingBox):
                 ret_list.append([self.get_lat(y), self.get_lon(x)])
 
         return ret_list
+
+    @staticmethod
+    def from_bounding_box(bbox: BoundingBox, block_per_degree_x: int, block_per_degree_y: int) -> "LatLonGrid":
+        return LatLonGrid(bbox.top_lat_y,
+                          bbox.bot_lat_y,
+                          bbox.left_lon_x,
+                          bbox.right_lon_x,
+                          block_per_degree_x,
+                          block_per_degree_y)

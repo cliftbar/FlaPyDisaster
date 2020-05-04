@@ -1,3 +1,9 @@
+import numpy
+from io import BytesIO
+from PIL import Image
+from numpy.core import ndarray
+
+
 # http://stackoverflow.com/questions/902761/saving-a-numpy-array-as-an-image
 def write_png(buf, width, height):
     """ 
@@ -28,3 +34,7 @@ def write_png(buf, width, height):
         png_pack(b'IHDR', struct.pack("!2I5B", width, height, 8, 6, 0, 0, 0)),
         png_pack(b'IDAT', zlib.compress(raw_data, 9)),
         png_pack(b'IEND', b'')])
+
+
+def image_bytes_to_array(file_bytes: bytes) -> ndarray:
+    return numpy.array(Image.open(BytesIO(file_bytes)))

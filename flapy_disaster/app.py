@@ -3,14 +3,13 @@ from pathlib import Path
 from marshmallow import missing
 from typing import Dict
 
-from autoapi.autoapi import AutoAPI
 from webargs.flaskparser import parser, abort
 
 from flask import Flask
 from flask_restful import Api
 from flask_cors import CORS
 
-from autoapi.registration import AutoAPIApp
+from automd.registration import AutoMDApp
 
 # logging config
 
@@ -36,11 +35,13 @@ CORS(flapy_app, resources={r"/v1/*": {"origins": "*"}})
 app_config: AppConfigContainer = AppConfigContainer(
     config.get_config(Configurations.app_config)
 )
-spec: AutoAPIApp = AutoAPIApp(api, app_config.title, app_config.app_version, app_config.openapi_version)
+spec: AutoMDApp = AutoMDApp(api, app_config.title, app_config.app_version, app_config.openapi_version)
 
 
 # Flask-RESTful setup
 flapy_app.config['ERROR_404_HELP'] = False
+
+
 # This error handler is necessary for usage with Flask-RESTful
 @parser.error_handler
 def handle_request_parsing_error(err, req, schema, *, error_status_code, error_headers):
@@ -75,11 +76,18 @@ api.add_resource(v1.web.StaticWebFiles,
                  endpoint=f"StaticWebFiles_{api_version}")
 
 
+# Test
+prefix = "test"
+api.add_resource(v1.test.Test,
+                 f"/{api_version}/{prefix}/test",
+                 endpoint=f"Test_{prefix}_{api_version}")
+
+
 # Status
 prefix = "status"
-api.add_resource(v1.status.Healthcheck,
+api.add_resource(v1.status.HealthCheck,
                  f"/{api_version}/{prefix}/healthcheck",
-                 endpoint=f"Healthcheck_{prefix}_{api_version}")
+                 endpoint=f"HealthCheck_{prefix}_{api_version}")
 
 prefix = "hurricane"
 # Events

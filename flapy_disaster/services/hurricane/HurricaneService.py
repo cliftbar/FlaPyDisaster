@@ -1,9 +1,13 @@
 from typing import List
 
 from flapy_disaster.models.hurricane.HurricaneModel import HurricaneModel
-from flapy_disaster.services.hurricane.HurricaneCatalog import FDCatalog, HurricaneEvent
-from flapy_disaster.services.hurricane.hurricane_utils import HurdatCatalog, old_to_new_tp
-from flapy_disaster.utilities.flapy_types import VelocityKnots, DistanceNauticalMiles
+from flapy_disaster.services.hurricane.HurricaneCatalog import FDCatalog, HurricaneEvent, HurricaneTrackPoint
+from flapy_disaster.services.hurricane.hurricane_nws23 import calc_windspeed
+from flapy_disaster.services.hurricane.hurricane_utils import HurdatCatalog, old_to_new_tp, calc_bearing_north_zero
+from flapy_disaster.utilities.flapy_types import VelocityKnots, DistanceNauticalMiles, ResolutionPixelsPerDegree, \
+    PositionCoordinate
+from flapy_disaster.utilities.general_objects import BoundingBox, LatLonGrid
+from flapy_disaster.utilities.general_units import haversine_degrees_to_meters
 
 
 class HurricaneService:
@@ -57,15 +61,71 @@ class HurricaneService:
     #####################
     def calculate_event(self,
                         event: HurricaneEvent,
-                        px_per_deg_x: int,
-                        px_per_deg_y: int):
-        pass
+                        px_per_deg_x: int = 10,
+                        px_per_deg_y: int = 10):
+        bbox: BoundingBox = self.create_bounds_from_track(event)
+        self.calculate_grid_python(event, px_per_deg_x, px_per_deg_y, bbox, 15)
+
+    def create_bounds_from_track(self, event: HurricaneEvent, lat_buffer: int = 2, lon_buffer: int = 2) -> BoundingBox:
+        lat_list = list(map(lambda x: x.point_lat_lon()[0], event.track_points))
+        lon_list = list(map(lambda x: x.point_lat_lon()[1], event.track_points))
+
+        return BoundingBox(max(lat_list) + lat_buffer,
+                           min(lat_list) - lat_buffer,
+                           max(lon_list) + lon_buffer,
+                           min(lon_list) - lon_buffer)
 
     def calculate_grid_python(self,
-                              px_per_deg_x: int,
-                              px_per_deg_y: int,
-                              radius_max_wind: DistanceNauticalMiles):
-        pass
+                              event: HurricaneEvent,
+                              px_per_deg_x: ResolutionPixelsPerDegree,
+                              px_per_deg_y: ResolutionPixelsPerDegree,
+                              bounds: BoundingBox,
+                              max_calculation_distance: DistanceNauticalMiles = 250,
+                              rmax_nmi: DistanceNauticalMiles = None,
+                              override_fspeed_kts: VelocityKnots = None) -> List[List[float, float, int]]:
+
+        lat_lon_list = LatLonGrid.from_bounding_box(bounds, px_per_deg_x, px_per_deg_y).get_lat_lon_list()
+        rmax: DistanceNauticalMiles = rmax_nmi or event.radius_max_wind
+
+        return [self.lat_lon_calc_loop(event.track_points, point[0], point[1], rmax, max_calculation_distance)
+                for point
+                in lat_lon_list]
+
+    def lat_lon_calc_loop(self,
+                          track_points: List[HurricaneTrackPoint],
+                          lat_y: PositionCoordinate,
+                          lon_x: PositionCoordinate,
+                          rmax_nmi: DistanceNauticalMiles,
+                          max_dist: DistanceNauticalMiles) -> List[float, float, int]:
+        """
+        Run the model calculation at a specific lat/long point, given a track and rmax
+        :param track_points: list of hurricane.hurricane_utils.HurdatCatalog.HurdatStormSystem.HurdatTrackPoint
+        :param lat_y: float
+        :param lon_x: float
+        :param rmax_nmi: int
+        :return: list as [lat, lon, max_wind]
+        """
+        max_wind: VelocityKnots = 0
+        for track_point in track_points:
+            eye_lat_lon = [track_point.lat_y, track_point.lon_x]
+            distance: DistanceNauticalMiles = haversine_degrees_to_meters(lat_y,
+                                                                          lon_x,
+                                                                          eye_lat_lon[0],
+                                                                          eye_lat_lon[1]) / 1000 * 0.539957  # convert to nautical miles
+            if distance < max_dist:
+                angle_to_center = calc_bearing_north_zero(eye_lat_lon[0], eye_lat_lon[1], lat_y, lon_x)
+                # TODO just accept pressure in calc_windspeed
+                windspeed_temp = calc_windspeed(track_point.min_pressure,
+                                                distance,
+                                                eye_lat_lon[0],
+                                                track_point.forward_speed,
+                                                rmax_nmi,
+                                                angle_to_center,
+                                                track_point.heading,
+                                                None,
+                                                track_point.max_wind)
+                max_wind = max(max_wind, windspeed_temp)
+        return [lat_y, lon_x, int(round(max_wind))]
 
     #################
     # Render Events #

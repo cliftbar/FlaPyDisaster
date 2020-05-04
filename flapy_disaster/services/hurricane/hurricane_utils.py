@@ -106,6 +106,36 @@ def interpolate_vmax_from_time(start_time: datetime,
     return ret_wind
 
 
+def interpolate_1d(x_start: float,
+                   y_start: float,
+                   x_end: float,
+                   y_end: float,
+                   x: float) -> float:
+    x_delta: float = x_end - x_start
+    current_delta: float = x - x_start
+
+    y_delta: Velocity = y_end - y_start
+
+    ret_wind: Velocity = y_end + (y_delta * current_delta / x_delta)
+
+    return ret_wind
+
+
+def interpolate_1d(x_start: float,
+                   y_start: float,
+                   x_end: float,
+                   y_end: float,
+                   x: float) -> float:
+    x_delta: float = x_end - x_start
+    current_delta: float = x - x_start
+
+    y_delta: Velocity = y_end - y_start
+
+    ret_wind: Velocity = y_end + (y_delta * current_delta / x_delta)
+
+    return ret_wind
+
+
 class HurdatCatalog:
     """
     Class representing a catalog of hurdat hurricanes

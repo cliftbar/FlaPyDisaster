@@ -12,3 +12,6 @@ matplotlib
 numba
 joblib
 pillow
+webargs
+pymongo
+automd

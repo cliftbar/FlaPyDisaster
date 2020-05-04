@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Any, List
 
-from autoapi.decorators import autodoc
+from automd.decorators import automd
 from flask_restful import Resource
 
 from webargs import fields
@@ -19,9 +19,9 @@ class HurricaneEventEndpoint(Resource):
         "event_id": fields.String(required=True, description="Hurricane Event ID")
     }
 
-    @autodoc(get_args,
-             summary="Get Hurricane Event",
-             description="Get the JSON representation of a Hurricane Event")
+    @automd(get_args,
+            summary="Get Hurricane Event",
+            description="Get the JSON representation of a Hurricane Event")
     @use_kwargs(get_args, location="query_and_json")
     def get(self, event_id: str) -> JSON:
         hurricane_service: HurricaneService = HurricaneService()

@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 
 import pytz
 
+from flapy_disaster.services.hurricane.hurricane_utils import interpolate_lat_lon_from_time, interpolate_vmax_from_time, \
+    calc_bearing_north_zero
 from flapy_disaster.utilities.general_units import haversine_degrees_to_meters
 from flapy_disaster.utilities.general_utils import FDEnum
 from flapy_disaster.utilities.flapy_types import (DistanceNauticalMiles,
@@ -12,7 +14,7 @@ from flapy_disaster.utilities.flapy_types import (DistanceNauticalMiles,
                                                   PressureMillibar,
                                                   JSON,
                                                   DistanceMeters,
-                                                  TimeHour)
+                                                  TimeHour, Point, PointLatLon)
 
 
 class ModelPoint(ABC):
@@ -166,10 +168,7 @@ class HurricaneEvent(FDEvent):
             self.HurricaneEventFields.source_data.value: self.source_data
         }
 
-    def time_interpolate_trackpoints(self) -> bool:
-        pass
-
-    def calculate_forward_speed(self) -> bool:
+    def calculate_forward_speed(self):
         if len(self.track_points) == 1:
             self.track_points[0].forward_speed = 0
             return True
@@ -197,6 +196,82 @@ class HurricaneEvent(FDEvent):
 
             if idx == 0:
                 curr_track_point.forward_speed = next_track_point.forward_speed
+
+    def time_interpolate_track_points(self,
+                                      time_step: timedelta = timedelta(hours=1),
+                                      recalculate_fspeed: bool = True,
+                                      recalculate_heading: bool = True):
+        """
+        Interpolates track to at least the interval given
+        :param time_step: timedelta default 1hr
+        :return:
+        """
+
+        temp_tps = [self.track_points[0]]
+        for pos in range(len(self.track_points) - 1):
+            temp_start_tp = self.track_points[pos]
+            end_tp = self.track_points[pos + 1]
+
+            temp_tps.append(temp_start_tp)
+            while (end_tp.timestamp - temp_start_tp.timestamp) > time_step:
+                temp_ts = temp_start_tp.timestamp + time_step
+                start_lat_lon = temp_start_tp.point_lat_lon()
+                end_lat_lon = end_tp.point_lat_lon()
+                new_lat_lon = interpolate_lat_lon_from_time(temp_start_tp.timestamp,
+                                                            start_lat_lon[0],
+                                                            start_lat_lon[1],
+                                                            end_tp.timestamp,
+                                                            end_lat_lon[0],
+                                                            end_lat_lon[1],
+                                                            temp_ts)
+                new_wind = interpolate_vmax_from_time(temp_start_tp.timestamp,
+                                                      temp_start_tp.max_wind_kts,
+                                                      end_tp.timestamp,
+                                                      end_tp.max_wind_kts,
+                                                      temp_ts)
+                temp_tp = HurricaneTrackPoint(temp_ts,
+                                              temp_start_tp.sequence,
+                                              new_lat_lon[0],
+                                              new_lat_lon[1],
+                                              temp_start_tp.heading,
+                                              new_wind,
+                                              temp_start_tp.min_pressure,
+                                              temp_start_tp.forward_speed,
+                                              temp_start_tp.is_landfall,
+                                              temp_start_tp.is_source_data)
+                temp_tps.append(temp_tp)
+                temp_start_tp = temp_tp
+                pos += 1
+
+        for i in range(len(temp_tps)):
+            temp_tps[i].sequence = i
+        self.track_points = temp_tps
+
+        if recalculate_fspeed:
+            self.calculate_forward_speed()
+
+        if recalculate_heading:
+            self.calc_trackpoint_headings()
+
+    def calc_trackpoint_headings(self):
+        """
+        Calculate the heading for every track point.  For all points except the last,
+        heading is defined as the direction to the next point.  For the last point,
+        heading is the same as the previous points heading.
+        :return: None
+        """
+        if len(self.track_points) == 1:
+            self.track_points[0].heading = 0
+        for i in range(len(self.track_points)):
+            if i == len(self.track_points) - 1:
+                self.track_points[i].heading = self.track_points[i - 1].heading
+                continue
+
+            next_lat_lng: PointLatLon = [self.track_points[i + 1].lat_y, self.track_points[i + 1].lon_x]
+            curr_lat_lng: PointLatLon = [self.track_points[i].lat_y, self.track_points[i].lon_x]
+
+            heading = calc_bearing_north_zero(curr_lat_lng[0], curr_lat_lng[1], next_lat_lng[0], next_lat_lng[1])
+            self.track_points[i].heading = heading
 
 
 class FDCatalog:
