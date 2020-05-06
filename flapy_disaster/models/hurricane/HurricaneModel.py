@@ -3,6 +3,7 @@ from typing import List
 from flapy_disaster.models.MongoInterface import MongoInterface
 
 from flapy_disaster.services.hurricane.HurricaneCatalog import HurricaneEvent, FDCatalog
+from flapy_disaster.utilities.ConfigurationLoader import ConfigurationLoader
 from flapy_disaster.utilities.flapy_types import JSON
 from flapy_disaster.utilities.general_utils import FDEnum
 
@@ -12,8 +13,8 @@ class HurricaneModel:
         catalogs = "catalogs"
         events = "events"
 
-    def __init__(self):
-        self.mongo: MongoInterface = MongoInterface()
+    def __init__(self, config: ConfigurationLoader):
+        self.mongo: MongoInterface = MongoInterface(config)
         self.database: str = "flapy_test"
 
     def get_catalog_ids(self) -> List[str]:

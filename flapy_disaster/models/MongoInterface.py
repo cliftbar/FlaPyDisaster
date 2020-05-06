@@ -8,12 +8,9 @@ from flapy_disaster.utilities.ConfigurationContainers import MongoConfiguration,
 from flapy_disaster.utilities.ConfigurationLoader import ConfigurationLoader
 from flapy_disaster.utilities.flapy_types import JSON
 
-from flapy_disaster.app import flapy_app, config_loader_key
-
 
 class MongoInterface:
-    def __init__(self):
-        config: ConfigurationLoader = flapy_app.config[config_loader_key]
+    def __init__(self, config: ConfigurationLoader):
         mongo_config: MongoConfiguration = MongoConfiguration(config.get_config(Configurations.mongo))
         self.client: MongoClient = MongoClient(mongo_config.host, mongo_config.port)
 

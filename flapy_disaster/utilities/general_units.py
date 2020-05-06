@@ -2,7 +2,7 @@
 # imports #
 ###########
 import math
-
+from math import sqrt, cos
 #############
 # Constants #
 #############
@@ -227,3 +227,10 @@ def haversine_degrees_to_meters(lat_1, lon_1, lat_2, lon_2):
          (math.sin(delta_lon / 2) ** 2))
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     return r * c
+
+
+# https://stackoverflow.com/questions/15736995/how-can-i-quickly-estimate-the-distance-between-two-latitude-longitude-points
+def quick_degress_to_meters(lat_1, lon_1, lat_2, lon_2) -> float:
+    x = lat_2 - lat_1
+    y = (lon_2 - lon_1) * cos((lat_2 + lat_1) * 0.00872664626)  # constant is 0.5 * pi/180
+    return 111319 * sqrt(x * x + y * y)

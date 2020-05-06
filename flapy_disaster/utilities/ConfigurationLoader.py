@@ -6,6 +6,9 @@ from typing import Dict, Any, List, Union, Hashable
 from flapy_disaster.utilities.ConfigurationContainers import Configurations
 
 
+config_loader_key: str = "fd_config"
+
+
 class ConfigurationLoader:
     def __init__(self, config_directory: str = "config", secrets_directory: str = "secrets", init: bool = True):
         self.config_directory: Path = Path(Path.cwd(), config_directory)

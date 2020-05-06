@@ -1,6 +1,7 @@
 ﻿from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Any, Dict
+from math import degrees
 
 import pandas as pd
 import pytz
@@ -22,12 +23,10 @@ from PIL import Image
 from io import BytesIO
 import os
 
-from flapy_disaster.services.hurricane.HurricaneCatalog import HurricaneTrackPoint
+from flapy_disaster.services.hurricane.trackpoint import HurricaneTrackPoint
 from flapy_disaster.utilities.flapy_types import AngleDegrees, Point, Velocity, DistanceNauticalMiles, PressureMillibar, \
     VelocityKnots, PointValue, GeojsonPoint
 from flapy_disaster.utilities.general_utils import FDEnum
-
-
 
 
 def calc_bearing_north_zero(lat_ref: AngleDegrees,
@@ -45,7 +44,7 @@ def calc_bearing_north_zero(lat_ref: AngleDegrees,
     lon_delta: AngleDegrees = lon_loc - lon_ref
     lat_delta: AngleDegrees = lat_loc - lat_ref
 
-    angle_deg: AngleDegrees = math.degrees(math.atan2(lon_delta, lat_delta))
+    angle_deg: AngleDegrees = degrees(math.atan2(lon_delta, lat_delta))
     return (angle_deg + 360) % 360
 
 
@@ -1236,10 +1235,11 @@ class HurdatCatalog:
 
 
 def old_to_new_tp(tp: HurdatCatalog.HurdatStormSystem.HurdatTrackPoint) -> HurricaneTrackPoint:
+    lat_y, lon_x = tp.point_lat_lon()
     return HurricaneTrackPoint(tp.timestamp,
                                tp.sequence,
-                               tp.lat_y,
-                               tp.lon_x,
+                               lat_y,
+                               lon_x,
                                tp.heading_to_next_point,
                                tp.max_wind_kts,
                                tp.min_pressure_mb,

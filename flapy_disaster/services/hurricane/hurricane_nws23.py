@@ -1,4 +1,4 @@
-﻿import math
+﻿from math import log, pi, sin, radians, exp, cos
 
 from flapy_disaster.utilities.flapy_types import (
     DistanceNauticalMiles,
@@ -68,9 +68,9 @@ def radial_decay(r_nmi: DistanceNauticalMiles, rmax_nmi: DistanceNauticalMiles) 
     ret_decay: float
     if r_nmi >= rmax_nmi:
         # NWS 23 pdf page 53
-        slope: float = (-0.051 * math.log(rmax_nmi)) - 0.1757
-        intercept: float = (0.4244 * math.log(rmax_nmi)) + 0.7586
-        ret_decay = (slope * math.log(r_nmi)) + intercept
+        slope: float = (-0.051 * log(rmax_nmi)) - 0.1757
+        intercept: float = (0.4244 * log(rmax_nmi)) + 0.7586
+        ret_decay = (slope * log(r_nmi)) + intercept
     else:
         # NWS 23 pdf page 54
         # ret = 1.01231578 / (1 + math.exp(-8.612066494 * ((r_nmi / float(rmax_nmi)) - 0.678031222)))
@@ -91,8 +91,8 @@ def coriolis_frequency(lat_deg: AngleDegrees) -> FrequencyHours:
     :param lat_deg: float deg
     :return: float hr**-1 coriolis factor
     """
-    w: float = 2.0 * math.pi / 24
-    coriolis_factor: FrequencyHours = 2.0 * w * math.sin(math.radians(lat_deg))
+    w: float = 2.0 * pi / 24
+    coriolis_factor: FrequencyHours = 2.0 * w * sin(radians(lat_deg))
     return coriolis_factor
 
 
@@ -110,7 +110,7 @@ def k_density_coefficient(lat_deg: AngleDegrees) -> float:
     """
 
     # return 70.1 + -0.185714286 * (lat_deg - 24.0)
-    k_coeff: float = 69.1952184 / (1 + math.exp(0.20252 * (lat_deg - 58.72458)))
+    k_coeff: float = 69.1952184 / (1 + exp(0.20252 * (lat_deg - 58.72458)))
     return k_coeff
 
 
@@ -161,7 +161,7 @@ def asymmetry_factor(fspeed_kts: VelocityKnots,
     bearing_shift: AngleDegrees = (90 - angle_from_center + track_bearing) % 360
     beta: AngleDegrees = (phi_beta + bearing_shift) % 360
     # print("Phi_r: {0}, Phi_rmax: {1}, beta: {2}, bearing_shift: {3}".format(phi_r, phi_rmax, beta, bearing_shift))
-    asym: VelocityKnots = 1.5 * (fspeed_kts ** 0.63) * (t_zero ** 0.37) * math.cos(math.radians(beta))
+    asym: VelocityKnots = 1.5 * (fspeed_kts ** 0.63) * (t_zero ** 0.37) * cos(radians(beta))
 
     return asym
 
@@ -181,19 +181,23 @@ def inflow_angle(r_nmi: DistanceNauticalMiles, rmax_nmi: DistanceNauticalMiles) 
     if r_nmi < r_phi_max:
         a = 11.438 * (rmax_nmi ** -1.416)
         b = (1.1453 * rmax_nmi) + 1.4536
-        phi_max: AngleDegrees = 9.7043566358 * math.log(rmax_nmi) - 2.7295806727
-        phi = phi_max / (1 + math.exp(-1 * a * (r_nmi - b)))
+        phi_max: AngleDegrees = (9.7043566358 * log(rmax_nmi)) - 2.7295806727
+        phi = phi_max / (1 + exp(-1 * a * (r_nmi - b)))
     else:  # following
         r_nmi_use: DistanceNauticalMiles = min(r_nmi, 130)
 
         x1: float = (0.0000896902 * rmax_nmi * rmax_nmi) - (0.0036924418 * rmax_nmi) + 0.0072307906
         x2: float = (0.000002966 * rmax_nmi * rmax_nmi) - (0.000090532 * rmax_nmi) - 0.0010373287
         x3: float = (-0.0000000592 * rmax_nmi * rmax_nmi) + (0.0000019826 * rmax_nmi) - 0.0000020198
-        c: float = (9.7043566341 * math.log(rmax_nmi)) - 2.7295806689
-        phi: AngleDegrees = ((x3 * ((r_nmi_use - r_phi_max) ** 3))
-                             + (x2 * ((r_nmi_use - r_phi_max) ** 2))
-                             + (x1 * (r_nmi_use - r_phi_max))
+        c: float = (9.7043566341 * log(rmax_nmi)) - 2.7295806689
+
+        delta_r: float = r_nmi_use - r_phi_max
+
+        phi: AngleDegrees = ((x3 * (delta_r * delta_r * delta_r))
+                             + (x2 * (delta_r * delta_r))
+                             + (x1 * delta_r)
                              + c)
+
         if 130 < r_nmi < 360:  # justification on NWS23 pdf page 287 page 263
             delta_phi: AngleDegrees = linear_interpolation(r_nmi, 130, 360, phi, (phi - 2))
             phi += delta_phi

@@ -18,11 +18,10 @@ from webargs.multidictproxy import MultiDictProxy
 from werkzeug.datastructures import MultiDict
 
 from flapy_disaster.utilities.ConfigurationContainers import AppConfigContainer, Configurations
-from flapy_disaster.utilities.ConfigurationLoader import ConfigurationLoader
+from flapy_disaster.utilities.ConfigurationLoader import ConfigurationLoader, config_loader_key
 
 flapy_app = Flask(__name__, static_url_path="", static_folder=str(Path(Path.cwd(), "web", "static")))
 
-config_loader_key: str = "fd_config"
 config: ConfigurationLoader = ConfigurationLoader()
 flapy_app.config[config_loader_key] = config
 
@@ -94,6 +93,10 @@ prefix = "hurricane"
 api.add_resource(v1.hurricane.HurricaneEventEndpoint,
                  f"/{api_version}/{prefix}/event",
                  endpoint=f"HurricaneCatalogEvent_{prefix}_{api_version}")
+
+api.add_resource(v1.hurricane.HurricaneEventRender,
+                 f"/{api_version}/{prefix}/event/render",
+                 endpoint=f"HurricaneEventRender_{prefix}_{api_version}")
 
 # Catalogs
 api.add_resource(v1.hurricane.HurricaneCatalog,
