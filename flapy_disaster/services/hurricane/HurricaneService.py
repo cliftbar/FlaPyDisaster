@@ -11,6 +11,8 @@ from flapy_disaster.utilities.flapy_types import VelocityKnots, DistanceNautical
 from flapy_disaster.utilities.general_objects import BoundingBox, LatLonGrid
 from flapy_disaster.utilities.general_units import haversine_degrees_to_meters, quick_degress_to_meters
 
+from numpy import ndarray, flipud, array
+
 
 class HurricaneService:
     def __init__(self, config: ConfigurationLoader):
@@ -63,11 +65,9 @@ class HurricaneService:
     #####################
     def calculate_event(self,
                         event: HurricaneEvent,
-                        px_per_deg_x: int = 10,
-                        px_per_deg_y: int = 10,
+                        lat_lon_grid: LatLonGrid,
                         radius_max_wind: DistanceNauticalMiles = 15):
-        bbox: BoundingBox = self.create_bounds_from_track(event)
-        return self.calculate_grid_python(event, px_per_deg_x, px_per_deg_y, bbox, rmax_nmi=radius_max_wind)
+        return self.calculate_grid_python(event, lat_lon_grid, rmax_nmi=radius_max_wind)
 
     def create_bounds_from_track(self, event: HurricaneEvent, lat_buffer: int = 2, lon_buffer: int = 2) -> BoundingBox:
         lat_list = list(map(lambda x: x.lat_y, event.track_points))
@@ -80,14 +80,12 @@ class HurricaneService:
 
     def calculate_grid_python(self,
                               event: HurricaneEvent,
-                              px_per_deg_x: ResolutionPixelsPerDegree,
-                              px_per_deg_y: ResolutionPixelsPerDegree,
-                              bounds: BoundingBox,
+                              lat_lon_grid: LatLonGrid,
                               max_calculation_distance: DistanceNauticalMiles = 350,
                               rmax_nmi: DistanceNauticalMiles = None,
                               override_fspeed_kts: VelocityKnots = None) -> List[Tuple[float, float, int]]:
 
-        lat_lon_list = LatLonGrid.from_bounding_box(bounds, px_per_deg_x, px_per_deg_y).get_lat_lon_list()
+        lat_lon_list = lat_lon_grid.get_lat_lon_list()
         rmax: DistanceNauticalMiles = rmax_nmi or event.radius_max_wind
 
         max_dist_deg_squared: float = (max_calculation_distance / 60) ** 2
@@ -149,3 +147,10 @@ class HurricaneService:
     #################
     def render_event(self):
         pass
+
+    def event_results_to_numpy(self, event_results, lat_lon_grid: LatLonGrid) -> ndarray:
+        temp_array: array = array(list(map((lambda x: x[2]), event_results)))
+        reshaped_array: ndarray = temp_array.reshape(lat_lon_grid.get_block_height_y(),
+                                                     lat_lon_grid.get_block_width_x())
+        flipped_array: ndarray = flipud(reshaped_array)
+        return flipped_array

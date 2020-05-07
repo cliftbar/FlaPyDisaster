@@ -1,5 +1,6 @@
 # Top level install command.
-conda install markdown2 pandas gdal geojson flask requests matplotlib numba joblib pillow flask-restful flask-cors
+conda install markdown2 pandas gdal geojson flask requests matplotlib numba joblib pillow flask-restful flask-cors boto3
+pip install automd
 
 # Top level packages
 markdown2
@@ -15,3 +16,4 @@ pillow
 webargs
 pymongo
 automd
+boto3
