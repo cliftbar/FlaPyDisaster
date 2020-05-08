@@ -1,4 +1,6 @@
-﻿from flapy_disaster.utilities.flapy_types import AngleDegrees
+﻿from typing import Dict
+
+from flapy_disaster.utilities.flapy_types import AngleDegrees
 
 
 class BoundingBox:
@@ -15,7 +17,7 @@ class BoundingBox:
     :method translate: STUB Returns a copy of the current bounding box, translated by x, y degrees 
     """
 
-    def __init__(self, top_lat_y, bot_lat_y, right_lon_x, left_lon_x):
+    def __init__(self, top_lat_y: float, bot_lat_y: float, right_lon_x: float, left_lon_x: float):
         """
         Initializer for BoundingBox class
         :param top_lat_y: float deg
@@ -23,24 +25,41 @@ class BoundingBox:
         :param right_lon_x: float deg
         :param left_lon_x: float deg
         """
-        self.top_lat_y = top_lat_y
-        self.bot_lat_y = bot_lat_y
-        self.right_lon_x = right_lon_x
-        self.left_lon_x = left_lon_x
+        self.top_lat_y: float = top_lat_y
+        self.bot_lat_y: float = bot_lat_y
+        self.right_lon_x: float = right_lon_x
+        self.left_lon_x: float = left_lon_x
 
-    def get_width(self):
+    def get_width(self) -> float:
         """
         Returns the width in deg of the bounding box
         :return: float deg
         """
         return self.right_lon_x - self.left_lon_x
 
-    def get_height(self):
+    def get_height(self) -> float:
         """
         Returns the height in deg of the bounding box
         :return: float deg
         """
         return self.top_lat_y - self.bot_lat_y
+
+    def to_dict(self) -> Dict:
+        return {
+            "top_lat_y": self.top_lat_y,
+            "bot_lat_y": self.bot_lat_y,
+            "right_lon_x": self.right_lon_x,
+            "left_lon_x": self.left_lon_x
+        }
+
+    @staticmethod
+    def from_dict(input_dict: Dict) -> "BoundingBox":
+        return BoundingBox(
+            input_dict["top_lat_y"],
+            input_dict["bot_lat_y"],
+            input_dict["right_lon_x"],
+            input_dict["left_lon_x"]
+        )
 
 
 class LatLonGrid(BoundingBox):
